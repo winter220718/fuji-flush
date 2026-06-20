@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>후지 플러쉬</title>
 <style>
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Thin.woff2')format('woff2');font-weight:100;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-ExtraLight.woff2')format('woff2');font-weight:200;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Light.woff2')format('woff2');font-weight:300;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Regular.woff2')format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Medium.woff2')format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-SemiBold.woff2')format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Bold.woff2')format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-ExtraBold.woff2')format('woff2');font-weight:800;font-display:swap}
+@font-face{font-family:'Suit';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Heavy.woff2')format('woff2');font-weight:900;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#fff0f8;--bg2:#f5e8ff;--surface:#fff;
@@ -18,7 +27,7 @@
   --cd:#e74c3c;--cd-l:#fde8e8;--cd-d:#922b21;
 }
 body{background:linear-gradient(150deg,var(--bg) 0%,var(--bg2) 100%);
-  color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow:hidden}
+  color:var(--txt);font-family:'Suit',sans-serif;min-height:100vh;overflow:hidden}
 .screen{display:none;height:100vh;width:100vw;position:absolute;top:0;left:0}
 .screen.active{display:flex}
 button{cursor:pointer;font-family:inherit;transition:all .18s;border:none}
