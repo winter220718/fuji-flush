@@ -713,7 +713,7 @@ function normalizeGame(game) {
     Object.keys(game.players).forEach(id => {
       const p = game.players[id];
       if (p.hand && !Array.isArray(p.hand)) p.hand = Object.values(p.hand);
-      // Firebase strips null values — restore them so logic works correctly
+      if (!p.hand) p.hand = [];  // Firebase strips empty arrays
       if (!('played' in p) || p.played === undefined) p.played = null;
     });
   }
@@ -784,7 +784,7 @@ async function handleMyTurnStart() {
   myTurnBusy = true;
   try {
     const p = G.players[myUid];
-    if (!p || p.isWinner) { await writeAndAdvance(dc(G)); return; }
+    if (!p || p.isWinner) { myTurnBusy = false; await writeAndAdvance(dc(G)); return; }
     if (p.hand.length===0 && p.played===null) {
       const g = dc(G);
       g.players[myUid].isWinner = true;
