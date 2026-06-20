@@ -899,8 +899,6 @@ function renderLog() {
 }
 
 // ── INIT ──
-window.setN = (n) => { chosenN=n; document.querySelectorAll('#num-btns button').forEach((b,i)=>b.classList.toggle('sel',i+3===n)); };
-setN(4);
 refreshHomeRecords();
 
 // Enter key in code input
