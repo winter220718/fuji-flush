@@ -615,6 +615,7 @@ function normalizeGame(game) {
   if (game.discard && !Array.isArray(game.discard)) game.discard = Object.values(game.discard);
   if (game.playerOrder && !Array.isArray(game.playerOrder)) game.playerOrder = Object.values(game.playerOrder);
   if (game.winners && !Array.isArray(game.winners)) game.winners = Object.values(game.winners);
+  if (!game.winners) game.winners = [];
   if (game.log && !Array.isArray(game.log)) game.log = Object.values(game.log);
   if (game.players) {
     Object.keys(game.players).forEach(id => {
