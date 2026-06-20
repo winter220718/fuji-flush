@@ -262,7 +262,6 @@ input{font-family:inherit}
 <div id="s-home" class="screen active">
   <img src="icon.webp" class="home-icon" alt="후지플러쉬">
   <div class="home-title">후지 플러쉬</div>
-  <input id="inp-hname" class="home-name-input" type="text" placeholder="내 이름을 입력하세요" maxlength="12" autocomplete="off">
   <div class="home-recent">
     <div class="home-recent-title">🕐 최근 게임</div>
     <div id="home-recent-list"></div>
@@ -278,6 +277,10 @@ input{font-family:inherit}
 <div id="s-create" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
   <div class="setup-box">
     <h2>🏠 방 만들기</h2>
+    <div class="field">
+      <label>내 이름</label>
+      <input id="inp-create-name" class="field input" type="text" placeholder="이름 입력" maxlength="12" autocomplete="off" style="width:100%;padding:11px 13px;background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;color:var(--txt);font-size:15px;outline:none;font-family:'Suit',sans-serif">
+    </div>
     <div class="field">
       <label>총 플레이어 수</label>
       <div class="num-btns" id="create-num-btns">
@@ -298,7 +301,11 @@ input{font-family:inherit}
 <!-- JOIN -->
 <div id="s-join" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
   <div class="setup-box" style="width:320px;align-items:center">
-    <h2>방 참가</h2>
+    <h2>🚪 방 참가</h2>
+    <div class="field" style="width:100%">
+      <label>내 이름</label>
+      <input id="inp-join-name" type="text" placeholder="이름 입력" maxlength="12" autocomplete="off" style="width:100%;padding:11px 13px;background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;color:var(--txt);font-size:15px;outline:none;font-family:'Suit',sans-serif">
+    </div>
     <input id="inp-code" class="code-input" type="text" placeholder="ABC123" maxlength="6" autocomplete="off">
     <button class="btn-start" style="width:100%" onclick="joinRoom()">참가하기</button>
     <button class="btn-back" style="width:100%" onclick="show('s-home')">← 뒤로</button>
@@ -325,6 +332,10 @@ input{font-family:inherit}
 <div id="s-setup" class="screen">
   <div class="setup-box">
     <h2>🤖 AI 게임 설정</h2>
+    <div class="field">
+      <label>내 이름</label>
+      <input id="inp-ai-name" type="text" placeholder="이름 입력" maxlength="12" autocomplete="off" style="width:100%;padding:11px 13px;background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;color:var(--txt);font-size:15px;outline:none;font-family:'Suit',sans-serif">
+    </div>
     <div class="field">
       <label>총 플레이어 수 (나 + AI)</label>
       <div class="num-btns" id="num-btns">
@@ -443,7 +454,14 @@ function mkCard(n, extra='') {
 }
 function fmtDur(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 function fmtDate(iso) { const d=new Date(iso); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
-function myName() { return (document.getElementById('inp-hname').value||'').trim()||'플레이어'; }
+function getSavedName() { return localStorage.getItem('fuji-name')||''; }
+function saveName(n) { if(n) localStorage.setItem('fuji-name', n); }
+function myName(inputId) {
+  const el = document.getElementById(inputId);
+  const n = (el?.value||'').trim();
+  saveName(n);
+  return n || getSavedName() || '플레이어';
+}
 
 // ── SCREENS ──
 function show(id) {
@@ -483,9 +501,9 @@ window.setCreateN = (n) => {
   createN = n;
   document.querySelectorAll('#create-num-btns button').forEach((b,i) => b.classList.toggle('sel', i+3===n));
 };
-window.goCreate = () => { show('s-create'); };
+window.goCreate = () => { show('s-create'); const s=getSavedName(); if(s)document.getElementById('inp-create-name').value=s; document.getElementById('inp-create-name').focus(); };
 window.doCreate = async () => {
-  const name = myName();
+  const name = myName('inp-create-name');
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
   roomCode = code;
   await set(ref(db, `rooms/${code}`), {
@@ -501,8 +519,9 @@ window.doCreate = async () => {
 
 window.goJoin = () => {
   document.getElementById('inp-code').value = '';
+  const s=getSavedName(); if(s)document.getElementById('inp-join-name').value=s;
   show('s-join');
-  setTimeout(() => document.getElementById('inp-code').focus(), 120);
+  setTimeout(() => document.getElementById('inp-join-name').focus(), 120);
 };
 
 window.joinRoom = async () => {
@@ -512,7 +531,7 @@ window.joinRoom = async () => {
   if (!snap.exists()) { alert('방이 없습니다. 코드를 확인해주세요.'); return; }
   const room = snap.val();
   if (room.status !== 'waiting') { alert('이미 시작된 방입니다.'); return; }
-  const name = myName();
+  const name = myName('inp-join-name');
   await update(ref(db, `rooms/${code}/players`), { [myUid]: { name, joinedAt: Date.now() } });
   roomCode = code;
   document.getElementById('lobby-code').textContent = code;
@@ -616,13 +635,13 @@ window.startMultiGame = async () => {
 };
 
 // ── AI GAME ──
-window.goAI = () => { show('s-setup'); };
+window.goAI = () => { const s=getSavedName(); if(s)document.getElementById('inp-ai-name').value=s; show('s-setup'); setTimeout(()=>document.getElementById('inp-ai-name').focus(),120); };
 window.setN = (n) => { chosenN=n; document.querySelectorAll('#num-btns button').forEach((b,i)=>b.classList.toggle('sel',i+3===n)); };
 
 window.startAIGame = () => {
   overlayOn(false);
   isOnline = false;
-  const name = myName();
+  const name = myName('inp-ai-name');
   const n = chosenN, hs = n>=7?5:6;
   const deck = shuffle([...BASE_DECK]);
   const AI_NAMES = ['AI 1','AI 2','AI 3','AI 4','AI 5','AI 6','AI 7'];
@@ -960,12 +979,6 @@ function renderLog() {
 window.setN = (n) => { chosenN=n; document.querySelectorAll('#num-btns button').forEach((b,i)=>b.classList.toggle('sel',i+3===n)); };
 setN(4);
 refreshHomeRecords();
-
-// 이름 localStorage 저장/복원
-const nameInput = document.getElementById('inp-hname');
-const savedName = localStorage.getItem('fuji-name');
-if (savedName) nameInput.value = savedName;
-nameInput.addEventListener('input', () => localStorage.setItem('fuji-name', nameInput.value.trim()));
 
 // Enter key in code input
 document.getElementById('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')window.joinRoom(); });
