@@ -274,6 +274,7 @@ input{font-family:inherit}
 .ovl-btns{display:flex;gap:10px;justify-content:center}
 .ovl-btns button{padding:12px 22px;border-radius:12px;font-size:15px;font-weight:700}
 .btn-again{background:#1f2937;color:#fff;box-shadow:0 4px 14px rgba(31,41,55,.25)}
+.btn-watch{background:#374151;color:#d1d5db;border:1px solid #4b5563!important}
 .btn-home2{background:#f9fafb;color:var(--txt2);border:1px solid var(--border)!important}
 .ovl-stats{font-size:12px;color:var(--txt3);margin-top:14px;line-height:1.8}
 .ovl-box.ovl-loss .ovl-stats{color:#6b7280}
@@ -401,6 +402,7 @@ input{font-family:inherit}
     <div class="ovl-sub" id="ovl-sub"></div>
     <div class="ovl-btns">
       <button class="btn-again" id="ovl-again">다시 하기</button>
+      <button class="btn-watch" id="ovl-watch" onclick="overlayWatch()">관전하기</button>
       <button class="btn-home2" onclick="overlayHome()">홈으로</button>
     </div>
     <div class="ovl-stats" id="ovl-stats"></div>
@@ -474,7 +476,8 @@ function show(id) {
 }
 window.show = show;
 function overlayOn(on) { document.getElementById('overlay').classList.toggle('show', on); }
-window.overlayHome = () => { overlayOn(false); leaveRoom(); show('s-home'); refreshHomeRecords(); };
+window.overlayHome = () => { leaveRoom(); };
+window.overlayWatch = () => { overlayOn(false); renderAll(); };
 
 // ── LOCAL STORAGE (records) ──
 const LS = 'fujiflush_v1';
@@ -544,10 +547,11 @@ window.joinRoom = async () => {
 };
 
 window.leaveRoom = () => {
-  if (roomUnsub) { off(ref(db, `rooms/${roomCode}`)); roomUnsub = null; }
+  if (roomUnsub) { roomUnsub(); roomUnsub = null; }
   if (roomCode) { update(ref(db, `rooms/${roomCode}/players/${myUid}`), { left: true }).catch(()=>{}); }
   roomCode = null; G = null; myTurnBusy = false; aiProcessing = false; amHost = false;
   clearInterval(timerIv);
+  overlayOn(false);
   refreshHomeRecords(); show('s-home');
 };
 
@@ -561,8 +565,9 @@ window.copyCode = () => {
 };
 
 function listenRoom(code) {
+  if (roomUnsub) { roomUnsub(); roomUnsub = null; }
   const r = ref(db, `rooms/${code}`);
-  onValue(r, snap => {
+  roomUnsub = onValue(r, snap => {
     if (!snap.exists()) return;
     const room = snap.val();
     const currentScreen = document.querySelector('.screen.active')?.id;
@@ -682,10 +687,8 @@ async function doAiTurn() {
   const p = G.players[curId];
   if (!p || !p.isAI) return;
   if (p.isWinner) {
-    const g = dc(G);
-    if (g.winners.length >= g.playerOrder.length - 1) { g.phase = 'gameover'; await writeGame(g); return; }
-    g.cur = nextCur(g);
-    await writeGame(g); return;
+    // 이미 승리한 상태인데 턴이 돌아온 불일치 → 즉시 gameover
+    const g = dc(G); g.phase = 'gameover'; await writeGame(g); return;
   }
   aiProcessing = true;
   try {
@@ -696,8 +699,9 @@ async function doAiTurn() {
 
     // 1단계: push-through (이전 턴에 낸 카드가 있으면)
     if (ap.played !== null) {
+      const wBefore = g.winners.length;
       runPush(g, curId);
-      if (g.winners.length >= g.playerOrder.length - 1) { g.phase = 'gameover'; await writeGame(g); return; }
+      if (g.winners.length > wBefore) { g.phase = 'gameover'; await writeGame(g); return; }
     }
 
     // 2단계: 새 카드 내기
@@ -708,9 +712,10 @@ async function doAiTurn() {
       addLog(g, `${ap.name}가 ${val} 냄`, 'p');
       runBeatCheck(g, curId);
     } else if (!ap.isWinner) {
+      // 패가 0장 + 낸 카드 없음 (덱 고갈로 카드를 못 받은 경우) → 즉시 승리
       ap.isWinner = true;
       if (!g.winners.includes(curId)) { g.winners.push(curId); addLog(g, `🏆 ${ap.name} 승리!!`, 'w'); }
-      if (g.winners.length >= g.playerOrder.length - 1) { g.phase = 'gameover'; await writeGame(g); return; }
+      g.phase = 'gameover'; await writeGame(g); return;
     }
 
     g.cur = nextCur(g);
@@ -813,11 +818,7 @@ async function handleMyTurnStart() {
       const g = dc(G);
       g.players[myUid].isWinner = true;
       if (!g.winners.includes(myUid)) { g.winners.push(myUid); addLog(g, `🏆 ${p.name} 승리!!`, 'w'); }
-      if (g.winners.length >= g.playerOrder.length - 1) {
-        g.phase = 'gameover';
-      } else {
-        g.cur = nextCur(g);
-      }
+      g.phase = 'gameover';
       myTurnBusy = false;
       await writeGame(g);
       return;
@@ -826,8 +827,9 @@ async function handleMyTurnStart() {
     if (p.played !== null) {
       const g = dc(G); g.turnCount++;
       addLog(g, `▸ ${p.name}의 차례`, 't');
+      const wBefore = g.winners.length;
       runPush(g, myUid);
-      if (g.winners.length >= g.playerOrder.length - 1) { g.phase='gameover'; myTurnBusy=false; await writeGame(g); return; }
+      if (g.winners.length > wBefore) { g.phase='gameover'; myTurnBusy=false; await writeGame(g); return; }
       myTurnBusy = false; // clear before write so onValue sees play phase
       await writeGame(g);
       if (G && G.phase==='playing' && isMyTurn() && G.players[myUid]?.played===null) renderAll();
@@ -855,7 +857,6 @@ window.onlinePlay = async (val) => {
     g.players[myUid].played = val;
     addLog(g, `${p.name}가 ${val} 냄`, 'p');
     runBeatCheck(g, myUid);
-    if (g.winners.length >= g.playerOrder.length - 1) { g.phase='gameover'; await writeGame(g); return; }
     g.cur = nextCur(g);
     await writeGame(g);
   } catch(e) {
@@ -881,31 +882,25 @@ async function writeGame(g) {
 function showEndOverlay() {
   if (!G) return;
   const dur = Math.floor((Date.now()-G.startTime)/1000);
-  const wNames = G.winners.map(id => G.players[id]?.name).filter(Boolean);
+  // 첫 번째로 카드를 비운 사람이 승자 (winners[0])
+  const winnerId = G.winners[0];
+  const winnerName = winnerId ? G.players[winnerId]?.name : '?';
   const humanWon = G.winners.includes(myUid);
-  const loserId = G.playerOrder.find(id => !G.winners.includes(id));
-  const loserName = loserId ? G.players[loserId]?.name : null;
-  const iAmLoser = loserId === myUid;
   const pName = getSavedName() || '플레이어';
   saveRecord({ date:new Date().toISOString(), duration:dur, playerName:pName,
-    numPlayers:G.playerOrder.length, winner:wNames.join(', '), humanWon, turns:G.turnCount });
+    numPlayers:G.playerOrder.length, winner:winnerName, humanWon, turns:G.turnCount });
   const box = document.querySelector('.ovl-box');
-  if(box){ box.classList.toggle('ovl-win', humanWon); box.classList.toggle('ovl-loss', iAmLoser); }
-  document.getElementById('ovl-icon').textContent = humanWon ? '🎉' : iAmLoser ? '😭' : '🎊';
-  document.getElementById('ovl-title').textContent = humanWon ? '승리!' : iAmLoser ? '패배!' : '게임 종료';
+  if(box){ box.classList.toggle('ovl-win', humanWon); box.classList.toggle('ovl-loss', !humanWon); }
+  document.getElementById('ovl-icon').textContent = humanWon ? '🎉' : '😭';
+  document.getElementById('ovl-title').textContent = humanWon ? '승리!' : '패배!';
   const meP = G.players[myUid];
-  let sub = '';
-  if(humanWon) {
-    sub = `🎉 축하합니다, ${meP?.name}님!\n모든 카드를 비웠습니다!`;
-    if(loserName) sub += `\n\n💀 패배: ${loserName}`;
-  } else if(iAmLoser) {
-    sub = `😭 ${meP?.name}님은 마지막까지 카드를 비우지 못했어요.\n\n🏆 승리자: ${wNames.join(', ')}`;
-  } else {
-    sub = `🏆 승리자: ${wNames.join(', ')}\n💀 패배: ${loserName || '?'}`;
-  }
+  const sub = humanWon
+    ? `🎉 축하합니다, ${meP?.name}님!\n가장 먼저 모든 카드를 비웠습니다!`
+    : `😭 ${winnerName}님이 먼저 모든 카드를 비웠습니다.\n\n아쉽지만 다음 기회에!`;
   document.getElementById('ovl-sub').textContent = sub;
   document.getElementById('ovl-stats').innerHTML = `⏱ ${fmtDur(dur)} &nbsp;·&nbsp; 🔄 ${G.turnCount}턴`;
   document.getElementById('ovl-again').style.display = 'none';
+  document.getElementById('ovl-watch').style.display = humanWon ? 'none' : '';
   overlayOn(true);
 }
 
@@ -928,11 +923,10 @@ function renderAll() { renderTop(); renderBot(); renderDeck(); renderLog(); }
 function renderTop() {
   const el = document.getElementById('g-top'); if(!el||!G)return; el.innerHTML='';
   const others = G.playerOrder.filter(id => id !== myUid);
-  const loserId = G.phase==='gameover' ? G.playerOrder.find(id=>!G.winners.includes(id)) : null;
   others.forEach(id => {
     const p = G.players[id]; if(!p)return;
     const isTurn = id === G.playerOrder[G.cur] && !p.isWinner;
-    const isLoser = id === loserId;
+    const isLoser = G.phase==='gameover' && !G.winners.includes(id);
     const div = document.createElement('div');
     div.className = `pslot${isTurn?' turn':''}${p.isWinner?' winner':''}${isLoser?' loser':''}`;
     div.id = `pslot-${id}`;
@@ -951,8 +945,7 @@ function renderBot() {
   if(!G)return;
   const p = G.players[myUid]; if(!p)return;
   const playPhase = isMyTurn() && !myTurnBusy && p.played===null && G.phase==='playing';
-  const loserId = G.phase==='gameover' ? G.playerOrder.find(id=>!G.winners.includes(id)) : null;
-  const iAmLoser = loserId === myUid;
+  const iAmLoser = G.phase==='gameover' && !G.winners.includes(myUid);
   const bot = document.getElementById('g-bot');
   bot.classList.toggle('myturn', playPhase);
   bot.classList.toggle('mywon', !!p.isWinner && !iAmLoser);
