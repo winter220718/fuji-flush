@@ -323,7 +323,7 @@ input{font-family:inherit}
 
 <!-- HOME -->
 <div id="s-home" class="screen active">
-  <div class="version-badge">v0.7</div>
+  <div class="version-badge">v0.8</div>
   <img src="icon.webp" class="home-icon" alt="후지플러쉬">
   <div class="home-title">후지 플러쉬</div>
   <div class="home-recent">
@@ -618,7 +618,10 @@ function listenRoom(code) {
         if (ev.type === 'push') triggerAnimation(ev.ids, 'anim-push');
       }
       if (G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
-      if (G.phase === 'playing' && amHost && isCurrentPlayerAI()) { aiProcessing = false; setTimeout(doAiTurn, 900); }
+      // lastEvent가 있으면 AI가 중간 단계 처리 중 — aiProcessing 리셋/재트리거 금지
+      if (G.phase === 'playing' && amHost && isCurrentPlayerAI() && !G.lastEvent) {
+        aiProcessing = false; setTimeout(doAiTurn, 900);
+      }
       rescheduleWatchdog();
     } else if (room.status === 'ended') {
       G = normalizeGame(room.game);
@@ -706,12 +709,13 @@ function rescheduleWatchdog() {
   if (!amHost) return;
   clearTimeout(watchdogTimer);
   watchdogTimer = setTimeout(() => {
-    if (G && G.phase === 'playing' && amHost && isCurrentPlayerAI()) {
+    // lastEvent가 있으면 아직 중간 단계 처리 중 — 더 길게 대기
+    if (G && G.phase === 'playing' && amHost && isCurrentPlayerAI() && !G.lastEvent) {
       console.warn('[watchdog] AI turn stuck, retrying');
       aiProcessing = false;
       doAiTurn();
     }
-  }, 3000);
+  }, 4000);
 }
 
 function isCurrentPlayerAI() {
