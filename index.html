@@ -409,6 +409,7 @@ let roomCode = null;
 let roomUnsub = null;
 let myTurnBusy = false;
 let timerIv = null;
+let amHost = false;
 
 // ── UTILS ──
 function shuffle(a) { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]]} return b; }
@@ -474,7 +475,7 @@ window.goCreate = () => { show('s-create'); const s=getSavedName(); if(s)documen
 window.doCreate = async () => {
   const name = myName('inp-create-name');
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-  roomCode = code;
+  roomCode = code; amHost = true;
   await set(ref(db, `rooms/${code}`), {
     hostId: myUid,
     maxPlayers: createN,
@@ -535,10 +536,11 @@ function listenRoom(code) {
     if (room.status === 'waiting') {
       renderLobby(room, code);
     } else if (room.status === 'playing') {
-      if (currentScreen !== 's-game') { isOnline = true; show('s-game'); timerStart(); }
+      if (currentScreen !== 's-game') { show('s-game'); timerStart(); }
       G = normalizeGame(room.game);
       renderAll();
       if (G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
+      if (G.phase === 'playing' && amHost && isCurrentPlayerAI()) setTimeout(doAiTurn, 900);
     } else if (room.status === 'ended') {
       G = normalizeGame(room.game);
       renderAll();
@@ -581,24 +583,35 @@ window.startMultiGame = async () => {
   const players = snap.val() || {};
   const hostSnap = await get(ref(db, `rooms/${roomCode}/hostId`));
   if (hostSnap.val() !== myUid) return;
+  const maxSnap = await get(ref(db, `rooms/${roomCode}/maxPlayers`));
+  const maxPlayers = maxSnap.val() || 4;
 
-  const playerOrder = Object.entries(players)
+  const humanOrder = Object.entries(players)
     .filter(([,p]) => !p.left)
     .sort(([,a],[,b]) => a.joinedAt - b.joinedAt)
     .map(([uid]) => uid);
 
+  const aiNames = ['AI1','AI2','AI3','AI4','AI5'];
+  const aiOrder = [];
+  for (let i = 0; humanOrder.length + aiOrder.length < maxPlayers; i++) {
+    const aid = `ai${i+1}`;
+    players[aid] = { name: aiNames[i], isAI: true };
+    aiOrder.push(aid);
+  }
+
+  const playerOrder = shuffle([...humanOrder, ...aiOrder]);
   const n = playerOrder.length;
   const hs = n >= 7 ? 5 : 6;
   const deck = shuffle([...BASE_DECK]);
   const ps = {};
   playerOrder.forEach(uid => {
-    ps[uid] = { name: players[uid].name, hand: deck.splice(0, hs), played: null, isWinner: false };
+    ps[uid] = { name: players[uid].name, hand: deck.splice(0, hs), played: null, isWinner: false, isAI: !!players[uid].isAI };
   });
 
   const game = {
-    playerOrder, players: ps, deck, discard: [],
+    playerOrder, players: ps, deck, discard: [], hostId: myUid,
     cur: 0, phase: 'playing', winners: [], turnCount: 0,
-    startTime: Date.now(), log: [`게임 시작! ${n}명 참가 (패 ${hs}장)`]
+    startTime: Date.now(), log: [`게임 시작! ${humanOrder.length}명 + AI ${aiOrder.length}명`]
   };
   await update(ref(db, `rooms/${roomCode}`), { status: 'playing', game });
 };
@@ -607,6 +620,43 @@ window.startMultiGame = async () => {
 function isMyTurn() {
   if (!G || !G.playerOrder) return false;
   return G.playerOrder[G.cur] === myUid;
+}
+
+function isCurrentPlayerAI() {
+  if (!G || !G.playerOrder) return false;
+  const cur = G.players[G.playerOrder[G.cur]];
+  return cur && cur.isAI;
+}
+
+async function doAiTurn() {
+  if (!G || G.phase !== 'playing' || myTurnBusy) return;
+  const curId = G.playerOrder[G.cur];
+  const p = G.players[curId];
+  if (!p || !p.isAI || p.isWinner) return;
+  myTurnBusy = true;
+  const g = dc(G);
+  const ap = g.players[curId];
+
+  // push-through: 이미 낸 카드가 있으면 먼저 처리
+  if (ap.played !== null) {
+    runBeatCheck(g, curId);
+    if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); myTurnBusy = false; return; }
+    g.cur = nextCur(g);
+    await writeGame(g);
+    myTurnBusy = false;
+    return;
+  }
+
+  const val = ap.hand[Math.floor(Math.random() * ap.hand.length)];
+  const idx = ap.hand.indexOf(val);
+  ap.hand.splice(idx, 1);
+  ap.played = val;
+  addLog(g, `${ap.name}가 ${val} 냄`, 'p');
+  runBeatCheck(g, curId);
+  if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); myTurnBusy = false; return; }
+  g.cur = nextCur(g);
+  await writeGame(g);
+  myTurnBusy = false;
 }
 
 function normalizeGame(game) {
@@ -689,7 +739,6 @@ function nextCur(g) {
 // ── ONLINE TURN HANDLING ──
 async function handleMyTurnStart() {
   if (myTurnBusy) return;
-  myId = myUid;
   const p = G.players[myUid];
   if (!p || p.isWinner) { myTurnBusy=true; await writeAndAdvance(dc(G)); myTurnBusy=false; return; }
   if (p.hand.length===0 && p.played===null) { myTurnBusy=true; await writeAndAdvance(dc(G)); myTurnBusy=false; return; }
