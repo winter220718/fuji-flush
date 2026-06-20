@@ -157,7 +157,13 @@ input{font-family:inherit}
 #g-bot{background:var(--surface);border:2px solid var(--border);border-radius:18px;
   padding:10px 12px;flex:1;min-height:0;display:flex;flex-direction:column;
   align-items:center;gap:8px;box-shadow:0 4px 16px var(--shadow);width:100%;box-sizing:border-box}
-#g-bot.myturn{border-color:#1f2937;box-shadow:0 0 0 3px rgba(31,41,55,.12),0 4px 16px var(--shadow)}
+#g-bot.myturn{border-color:#1f2937;box-shadow:0 0 0 4px rgba(31,41,55,.25),0 4px 24px var(--shadow);animation:myTurnPulse 1.4s ease-in-out infinite}
+@keyframes myTurnPulse{0%,100%{box-shadow:0 0 0 4px rgba(31,41,55,.25),0 4px 24px var(--shadow)}50%{box-shadow:0 0 0 7px rgba(31,41,55,.12),0 4px 32px var(--shadow)}}
+#my-turn-banner{display:none;align-items:center;justify-content:center;gap:6px;
+  background:#1f2937;color:#fff;font-size:13px;font-weight:800;letter-spacing:.05em;
+  border-radius:20px;padding:5px 16px;animation:bannerPop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bannerPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+#my-turn-banner.show{display:flex}
 
 .pslot{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;
   padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;
@@ -349,7 +355,7 @@ input{font-family:inherit}
   <div id="g-bot">
     <div class="bot-row">
       <span class="bot-name" id="bot-name">나</span>
-      <span id="hint" style="display:none">카드를 선택하세요! 👆</span>
+      <div id="my-turn-banner">✏️ 내 차례</div>
       <span id="hcard-cnt" style="margin-left:auto"></span>
     </div>
     <div class="bot-played">
@@ -408,6 +414,7 @@ let G = null;          // current game state
 let roomCode = null;
 let roomUnsub = null;
 let myTurnBusy = false;
+let aiProcessing = false;
 let timerIv = null;
 let amHost = false;
 
@@ -512,7 +519,7 @@ window.joinRoom = async () => {
 window.leaveRoom = () => {
   if (roomUnsub) { off(ref(db, `rooms/${roomCode}`)); roomUnsub = null; }
   if (roomCode) { update(ref(db, `rooms/${roomCode}/players/${myUid}`), { left: true }).catch(()=>{}); }
-  roomCode = null; G = null; myTurnBusy = false; amHost = false;
+  roomCode = null; G = null; myTurnBusy = false; aiProcessing = false; amHost = false;
   clearInterval(timerIv);
   refreshHomeRecords(); show('s-home');
 };
@@ -629,21 +636,21 @@ function isCurrentPlayerAI() {
 }
 
 async function doAiTurn() {
-  if (!G || G.phase !== 'playing' || myTurnBusy) return;
+  if (!G || G.phase !== 'playing' || aiProcessing) return;
   const curId = G.playerOrder[G.cur];
   const p = G.players[curId];
   if (!p || !p.isAI || p.isWinner) return;
-  myTurnBusy = true;
+  aiProcessing = true;
   const g = dc(G);
   const ap = g.players[curId];
 
   // push-through: 이미 낸 카드가 있으면 먼저 처리
   if (ap.played !== null) {
     runBeatCheck(g, curId);
-    if (g.winners.length) { g.phase = 'gameover'; myTurnBusy = false; await writeGame(g); return; }
+    if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); aiProcessing = false; return; }
     g.cur = nextCur(g);
-    myTurnBusy = false;
     await writeGame(g);
+    aiProcessing = false;
     return;
   }
 
@@ -653,10 +660,10 @@ async function doAiTurn() {
   ap.played = val;
   addLog(g, `${ap.name}가 ${val} 냄`, 'p');
   runBeatCheck(g, curId);
-  if (g.winners.length) { g.phase = 'gameover'; myTurnBusy = false; await writeGame(g); return; }
+  if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); aiProcessing = false; return; }
   g.cur = nextCur(g);
-  myTurnBusy = false;
   await writeGame(g);
+  aiProcessing = false;
 }
 
 function normalizeGame(game) {
@@ -860,7 +867,8 @@ function renderBot() {
   const playPhase = isMyTurn() && !myTurnBusy && p.played===null && G.phase==='playing';
   document.getElementById('g-bot').classList.toggle('myturn', playPhase);
   document.getElementById('bot-name').textContent = p.isWinner?`${p.name} 🏆`:p.name;
-  document.getElementById('hint').style.display = playPhase?'':'none';
+  const banner = document.getElementById('my-turn-banner');
+  if(banner){ banner.classList.toggle('show', playPhase); if(playPhase) { banner.textContent=''; banner.innerHTML='✏️ 내 차례'; } }
   document.getElementById('hcard-cnt').textContent = `패 ${p.hand.length}장`;
   const hz = document.getElementById('h-played');
   hz.innerHTML=''; hz.className='played-zone'; hz.style.cssText='';
