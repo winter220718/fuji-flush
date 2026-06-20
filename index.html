@@ -961,6 +961,12 @@ window.setN = (n) => { chosenN=n; document.querySelectorAll('#num-btns button').
 setN(4);
 refreshHomeRecords();
 
+// 이름 localStorage 저장/복원
+const nameInput = document.getElementById('inp-hname');
+const savedName = localStorage.getItem('fuji-name');
+if (savedName) nameInput.value = savedName;
+nameInput.addEventListener('input', () => localStorage.setItem('fuji-name', nameInput.value.trim()));
+
 // Enter key in code input
 document.getElementById('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')window.joinRoom(); });
 </script>
