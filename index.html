@@ -265,6 +265,27 @@ input{font-family:inherit}
   <button class="btn-ai" onclick="goAI()">🤖 AI와 게임</button>
 </div>
 
+<!-- CREATE ROOM SETUP -->
+<div id="s-create" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div class="setup-box">
+    <h2>🏠 방 만들기</h2>
+    <div class="field">
+      <label>총 플레이어 수</label>
+      <div class="num-btns" id="create-num-btns">
+        <button onclick="setCreateN(3)">3명</button>
+        <button onclick="setCreateN(4)" class="sel">4명</button>
+        <button onclick="setCreateN(5)">5명</button>
+        <button onclick="setCreateN(6)">6명</button>
+        <button onclick="setCreateN(7)">7명</button>
+        <button onclick="setCreateN(8)">8명</button>
+      </div>
+    </div>
+    <div class="setup-hint">설정한 인원이 모두 들어오면<br>방장이 게임을 시작할 수 있어요</div>
+    <button class="btn-start" onclick="doCreate()">방 만들기</button>
+    <button class="btn-back" onclick="show('s-home')">← 뒤로</button>
+  </div>
+</div>
+
 <!-- JOIN -->
 <div id="s-join" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
   <div class="setup-box" style="width:320px;align-items:center">
@@ -448,12 +469,19 @@ function refreshHomeRecords() {
 }
 
 // ── ROOM MANAGEMENT ──
-window.goCreate = async () => {
+let createN = 4;
+window.setCreateN = (n) => {
+  createN = n;
+  document.querySelectorAll('#create-num-btns button').forEach((b,i) => b.classList.toggle('sel', i+3===n));
+};
+window.goCreate = () => { show('s-create'); };
+window.doCreate = async () => {
   const name = myName();
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
   roomCode = code;
   await set(ref(db, `rooms/${code}`), {
     hostId: myUid,
+    maxPlayers: createN,
     status: 'waiting',
     players: { [myUid]: { name, joinedAt: Date.now() } }
   });
@@ -541,11 +569,12 @@ function renderLobby(room, code) {
   });
 
   const count = ordered.length;
+  const max = room.maxPlayers || 8;
   const isHost = room.hostId === myUid;
   const statusEl = document.getElementById('lobby-status');
   const startBtn = document.getElementById('btn-lobby-start');
 
-  statusEl.textContent = `${count}명 참가 중 (최소 2명, 최대 8명)`;
+  statusEl.textContent = `${count} / ${max}명 참가 중`;
   startBtn.style.display = isHost ? '' : 'none';
   if (isHost) startBtn.disabled = count < 2;
 }
