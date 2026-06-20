@@ -575,7 +575,7 @@ function renderLobby(room, code) {
 
   statusEl.textContent = `${count} / ${max}명 참가 중`;
   startBtn.style.display = isHost ? '' : 'none';
-  if (isHost) startBtn.disabled = count < 2;
+  if (isHost) startBtn.disabled = false;
 }
 
 window.startMultiGame = async () => {
