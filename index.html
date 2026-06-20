@@ -512,7 +512,7 @@ window.joinRoom = async () => {
 window.leaveRoom = () => {
   if (roomUnsub) { off(ref(db, `rooms/${roomCode}`)); roomUnsub = null; }
   if (roomCode) { update(ref(db, `rooms/${roomCode}/players/${myUid}`), { left: true }).catch(()=>{}); }
-  roomCode = null; G = null; isOnline = false; myTurnBusy = false;
+  roomCode = null; G = null; myTurnBusy = false; amHost = false;
   clearInterval(timerIv);
   refreshHomeRecords(); show('s-home');
 };
@@ -880,7 +880,7 @@ function renderDeck() {
   const ind = document.getElementById('turn-ind');
   if(ind&&G.playerOrder&&G.playerOrder[G.cur]) {
     const c = G.players[G.playerOrder[G.cur]];
-    const meId = isOnline?myUid:myId;
+    const meId = myUid;
     const isMeTurn = G.playerOrder[G.cur]===myUid;
     ind.textContent = c?.isWinner?'게임 종료':`${c?.name}의 차례${isMeTurn?' ✏️':''}`;
   }
