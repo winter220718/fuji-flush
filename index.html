@@ -598,7 +598,7 @@ window.startMultiGame = async () => {
     .sort(([,a],[,b]) => a.joinedAt - b.joinedAt)
     .map(([uid]) => uid);
 
-  const aiNames = ['AI1','AI2','AI3','AI4','AI5'];
+  const aiNames = ['AI1','AI2','AI3','AI4','AI5','AI6','AI7'];
   const aiOrder = [];
   for (let i = 0; humanOrder.length + aiOrder.length < maxPlayers; i++) {
     const aid = `ai${i+1}`;
