@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>후지 플러쉬 🌊</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff0f8;
+  --bg2:#f5e8ff;
+  --surface:#fff;
+  --border:rgba(220,50,150,.12);
+  --shadow:rgba(180,30,110,.10);
+  --txt:#5c0a3a;
+  --txt2:#9c2060;
+  --txt3:#d078b0;
+  --gold:#e8901a;
+  --gold-l:#fff3cd;
+  --red:#d63031;
+  --red-l:#ffe0e0;
+  --blue:#0984e3;
+  --blue-l:#e0f0ff;
+  --pk:#e91e8c;
+  --pk-d:#c01870;
+  --ca:#34a853;--ca-l:#e6f4ea;--ca-d:#1b7a3a;
+  --cb:#4285f4;--cb-l:#e8f0fe;--cb-d:#1a56c4;
+  --cc:#9b59b6;--cc-l:#f3e8fd;--cc-d:#6c3483;
+  --cd:#e74c3c;--cd-l:#fde8e8;--cd-d:#922b21;
+}
+body{background:linear-gradient(150deg,var(--bg) 0%,var(--bg2) 100%);
+  color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow:hidden}
+.screen{display:none;height:100vh;width:100vw;position:absolute;top:0;left:0}
+.screen.active{display:flex}
+button{cursor:pointer;font-family:inherit;transition:all .18s;border:none}
+button:active{transform:scale(.95)}
+input{font-family:inherit}
+
+/* ── HOME ── */
+#s-home{flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px}
+.home-icon{width:90px;height:90px;border-radius:50%;object-fit:cover;
+  box-shadow:0 6px 24px rgba(233,30,140,.35);border:3px solid rgba(233,30,140,.3);
+  animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.home-title{font-size:52px;font-weight:900;letter-spacing:-2px;
+  background:linear-gradient(135deg,#e91e8c,#9c27b0);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.home-sub{font-size:15px;color:var(--txt3);margin-top:-10px}
+
+.home-recent{background:var(--surface);border-radius:18px;padding:16px 20px;width:340px;
+  box-shadow:0 4px 20px var(--shadow);border:1px solid var(--border)}
+.home-recent-title{font-size:13px;font-weight:700;color:var(--txt3);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.home-rec-empty{font-size:14px;color:var(--txt3);text-align:center;padding:10px 0}
+.home-rec-item{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--border)}
+.home-rec-item:last-child{border-bottom:none}
+.home-rec-medal{font-size:22px;flex-shrink:0;width:26px;text-align:center}
+.home-rec-info{flex:1;min-width:0}
+.home-rec-winner{font-size:14px;font-weight:700;color:var(--txt);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-rec-winner.win{color:var(--pk)}
+.home-rec-meta{font-size:12px;color:var(--txt3);margin-top:2px}
+.home-rec-time{font-size:13px;font-weight:600;color:var(--txt2);flex-shrink:0}
+
+.home-btns{display:flex;flex-direction:column;gap:10px;width:340px}
+.btn-primary{padding:15px;border-radius:14px;font-size:18px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#e91e8c,#9c27b0);
+  box-shadow:0 5px 20px rgba(233,30,140,.35)}
+.btn-primary:hover{box-shadow:0 8px 28px rgba(233,30,140,.5);transform:translateY(-2px)}
+
+/* ── SETUP ── */
+#s-setup{flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.setup-box{background:var(--surface);border-radius:22px;padding:30px;width:370px;
+  box-shadow:0 8px 32px var(--shadow);border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:18px}
+.setup-box h2{font-size:22px;font-weight:800;text-align:center;color:var(--txt)}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--txt3);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.field input{width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--txt);font-size:15px;outline:none}
+.field input:focus{border-color:var(--pk);background:#fff}
+.field input::placeholder{color:var(--txt3)}
+.num-btns{display:flex;gap:6px}
+.num-btns button{flex:1;padding:11px 0;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:9px;color:var(--txt2);font-size:14px;font-weight:700}
+.num-btns button.sel{background:linear-gradient(135deg,#e91e8c,#9c27b0);
+  border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(233,30,140,.3)}
+.num-btns button:hover:not(.sel){border-color:var(--pk);color:var(--txt)}
+.btn-start{padding:14px;border-radius:12px;font-size:18px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#e91e8c,#9c27b0);
+  box-shadow:0 5px 18px rgba(233,30,140,.3)}
+.btn-start:hover{box-shadow:0 8px 26px rgba(233,30,140,.5);transform:translateY(-2px)}
+.btn-back{padding:10px;border-radius:10px;font-size:14px;color:var(--txt2);
+  background:var(--bg);border:1px solid var(--border)}
+.btn-back:hover{color:var(--txt)}
+.setup-hint{font-size:12px;color:var(--txt3);line-height:1.8;text-align:center}
+.btn-ghost{padding:10px;border-radius:12px;font-size:14px;font-weight:600;
+  color:var(--txt2);background:var(--surface);border:1px solid var(--border);
+  box-shadow:0 2px 8px var(--shadow)}
+.btn-ghost:hover{color:var(--txt);border-color:var(--pk)}
+
+/* ── RECORDS ── */
+#s-records{flex-direction:column;align-items:center;background:linear-gradient(150deg,var(--bg),var(--bg2));
+  padding:24px;gap:14px;overflow-y:auto}
+#s-records h2{font-size:24px;font-weight:800;color:var(--txt)}
+.rec-box{background:var(--surface);border-radius:18px;width:100%;max-width:500px;
+  max-height:calc(100vh - 140px);overflow-y:auto;box-shadow:0 4px 18px var(--shadow);
+  border:1px solid var(--border)}
+.rec-empty{padding:36px;text-align:center;color:var(--txt3);font-size:14px}
+.rec-item{padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px}
+.rec-item:last-child{border-bottom:none}
+.rec-medal{font-size:22px;flex-shrink:0}
+.rec-info{flex:1;min-width:0}
+.rec-winner{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-winner.win{color:var(--pk)}
+.rec-winner.loss{color:var(--txt2)}
+.rec-meta{font-size:12px;color:var(--txt3);margin-top:3px}
+.rec-time{font-size:13px;font-weight:600;color:var(--txt2);flex-shrink:0}
+.rec-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:500px}
+
+/* ── GAME ── */
+#s-game{flex-direction:column;padding:10px;gap:7px;overflow:hidden;
+  background:linear-gradient(150deg,var(--bg) 0%,var(--bg2) 100%)}
+#g-top{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;flex-shrink:0}
+#g-mid{display:flex;gap:10px;justify-content:center;align-items:flex-start;
+  flex:1;overflow:hidden;min-height:0}
+#g-bot{background:var(--surface);border:2px solid var(--border);border-radius:18px;
+  padding:12px 16px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-shadow:0 4px 16px var(--shadow)}
+#g-bot.myturn{border-color:var(--pk);box-shadow:0 0 0 3px rgba(233,30,140,.15),0 4px 16px var(--shadow)}
+
+/* AI Player Slot */
+.pslot{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;
+  padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  min-width:100px;box-shadow:0 2px 10px var(--shadow);transition:border-color .25s,box-shadow .25s}
+.pslot.turn{border-color:var(--pk);box-shadow:0 0 0 2px rgba(233,30,140,.2),0 2px 10px var(--shadow)}
+.pslot.winner{border-color:var(--pk);background:linear-gradient(135deg,#fff0f8,#fff)}
+.pname{font-size:13px;font-weight:700;color:var(--txt2);text-align:center;
+  max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcount{font-size:12px;color:var(--txt3)}
+.phand{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100px}
+.mini-card{width:18px;height:26px;border-radius:4px;border:1.5px solid #e0c8f0;
+  background:linear-gradient(135deg,#fce4ec,#f3e5f5)}
+.played-zone{width:78px;height:112px;border:2px dashed var(--border);border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--txt3);
+  background:var(--bg)}
+
+/* ── CARD ── */
+.card{border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;user-select:none;transition:transform .18s,box-shadow .18s;flex-shrink:0;
+  background:var(--surface);box-shadow:0 4px 12px rgba(0,0,0,.13);overflow:hidden;
+  width:78px;height:112px}  /* played/AI size */
+.c-tl,.c-br{position:absolute;font-size:13px;font-weight:900;line-height:1;text-align:center}
+.c-tl{top:5px;left:6px}
+.c-br{bottom:5px;right:6px;transform:rotate(180deg)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:7px;border-radius:13px 13px 0 0}
+.c-emoji{font-size:30px;line-height:1;margin-bottom:2px}
+.c-num{font-size:28px;font-weight:900;line-height:1}
+
+.card.ca::before{background:var(--ca)}
+.card.ca .c-tl,.card.ca .c-br,.card.ca .c-num{color:var(--ca-d)}
+.card.cb::before{background:var(--cb)}
+.card.cb .c-tl,.card.cb .c-br,.card.cb .c-num{color:var(--cb-d)}
+.card.cc::before{background:var(--cc)}
+.card.cc .c-tl,.card.cc .c-br,.card.cc .c-num{color:var(--cc-d)}
+.card.cd::before{background:var(--cd)}
+.card.cd .c-tl,.card.cd .c-br,.card.cd .c-num{color:var(--cd-d)}
+
+/* Hand cards — +30% bigger than played */
+.card.hand-card{width:101px;height:146px}
+.card.hand-card .c-tl,.card.hand-card .c-br{font-size:16px}
+.card.hand-card .c-emoji{font-size:38px}
+.card.hand-card .c-num{font-size:36px}
+.card.hand-card::before{height:9px}
+
+.card.clickable{cursor:pointer}
+.card.clickable:hover{transform:translateY(-14px);box-shadow:0 14px 28px rgba(0,0,0,.2)}
+.card.clickable:active{transform:translateY(-8px)}
+
+/* Beat/push flash */
+.pslot-beat{animation:slotBeat .6s ease}
+@keyframes slotBeat{0%,100%{background:var(--surface)}40%{background:var(--red-l)}}
+.pslot-push{animation:slotPush .6s ease}
+@keyframes slotPush{0%,100%{background:var(--surface)}40%{background:var(--blue-l)}}
+
+/* Deck area */
+#g-deck{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0}
+.deck-pile{width:78px;height:112px;background:linear-gradient(135deg,#e91e8c,#9c27b0);
+  border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:28px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.1),6px 6px 0 rgba(0,0,0,.07);
+  border:2px solid rgba(255,255,255,.4)}
+.deck-count{font-size:13px;color:var(--txt2);text-align:center;font-weight:500}
+#turn-ind{font-size:13px;color:var(--pk);text-align:center;padding:5px 12px;
+  background:rgba(233,30,140,.08);border-radius:20px;border:1px solid rgba(233,30,140,.2);font-weight:700}
+#game-timer{font-size:14px;color:var(--txt3);font-variant-numeric:tabular-nums;text-align:center}
+
+/* Log */
+#g-log{flex:1;max-width:230px;min-width:130px;background:var(--surface);border-radius:14px;
+  padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  box-shadow:0 2px 10px var(--shadow);border:1px solid var(--border)}
+.log-e{font-size:11px;padding:2px 5px;border-radius:5px;line-height:1.4;word-break:keep-all}
+.log-n{color:var(--txt3)}
+.log-p{color:var(--txt2)}
+.log-b{color:var(--red);font-weight:700;background:var(--red-l)}
+.log-s{color:var(--blue);font-weight:700;background:var(--blue-l)}
+.log-w{color:var(--pk);font-weight:800;font-size:12px}
+.log-t{color:var(--txt3);font-size:10px;border-top:1px solid var(--border);
+  margin-top:2px;padding-top:4px}
+
+/* Human bottom */
+.bot-row{display:flex;align-items:center;gap:12px;width:100%}
+.bot-name{font-size:17px;font-weight:800;color:var(--txt)}
+#hint{font-size:14px;color:var(--pk);font-weight:700;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.bot-played{display:flex;align-items:center;gap:12px}
+.bot-played-label{font-size:13px;color:var(--txt3)}
+#human-hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#hcard-cnt{font-size:13px;color:var(--txt3)}
+
+/* Overlay */
+#overlay{position:fixed;inset:0;background:rgba(255,240,248,.65);display:none;
+  align-items:center;justify-content:center;z-index:99;backdrop-filter:blur(6px)}
+#overlay.show{display:flex}
+.ovl-box{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:24px;padding:36px 32px;text-align:center;max-width:360px;
+  box-shadow:0 16px 48px var(--shadow);animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.ovl-icon{font-size:52px;line-height:1;margin-bottom:8px}
+.ovl-title{font-size:28px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.ovl-sub{font-size:14px;color:var(--txt2);margin-bottom:20px;line-height:1.7;white-space:pre-line}
+.ovl-btns{display:flex;gap:10px;justify-content:center}
+.ovl-btns button{padding:12px 22px;border-radius:12px;font-size:15px;font-weight:700}
+.btn-again{background:linear-gradient(135deg,#e91e8c,#9c27b0);color:#fff;
+  box-shadow:0 4px 14px rgba(233,30,140,.3)}
+.btn-home2{background:var(--bg);color:var(--txt2);border:1px solid var(--border)!important}
+.ovl-stats{font-size:12px;color:var(--txt3);margin-top:14px;line-height:1.8}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(233,30,140,.2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <img src="icon.webp" class="home-icon" alt="후지플러쉬">
+  <div class="home-title">후지 플러쉬</div>
+  <div class="home-sub">Fuji Flush — by Friedemann Friese</div>
+
+  <div class="home-recent">
+    <div class="home-recent-title">🕐 최근 게임</div>
+    <div id="home-recent-list"></div>
+  </div>
+
+  <div class="home-btns">
+    <button class="btn-primary" onclick="showSetup()">🎮 새 게임 시작</button>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="s-setup" class="screen">
+  <div class="setup-box">
+    <h2>🌊 게임 설정</h2>
+    <div class="field">
+      <label>내 이름</label>
+      <input id="inp-name" type="text" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off"/>
+    </div>
+    <div class="field">
+      <label>총 플레이어 수 (나 + AI)</label>
+      <div class="num-btns" id="num-btns">
+        <button onclick="setN(3)">3명</button>
+        <button onclick="setN(4)" class="sel">4명</button>
+        <button onclick="setN(5)">5명</button>
+        <button onclick="setN(6)">6명</button>
+        <button onclick="setN(7)">7명</button>
+        <button onclick="setN(8)">8명</button>
+      </div>
+    </div>
+    <div class="setup-hint">
+      카드를 모두 먼저 없애면 승리!<br>
+      같은 숫자 합산 → 낮은 합산값 격파<br>
+      아무도 못 이기면 다음 턴에 푸시로 제거
+    </div>
+    <button class="btn-start" onclick="startGame()">게임 시작!</button>
+    <button class="btn-back" onclick="show('s-home');refreshHomeRecords()">← 뒤로</button>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div id="s-records" class="screen">
+  <div class="rec-top">
+    <h2>🏆 게임 기록</h2>
+    <button class="btn-ghost" style="padding:8px 16px" onclick="show('s-home');refreshHomeRecords()">← 홈</button>
+  </div>
+  <div class="rec-box" id="rec-list"></div>
+</div>
+
+<!-- GAME -->
+<div id="s-game" class="screen">
+  <div id="g-top"></div>
+  <div id="g-mid">
+    <div id="g-deck">
+      <div class="deck-pile" id="deck-pile">🂠</div>
+      <div class="deck-count" id="deck-cnt">남은 카드: 0장</div>
+      <div id="turn-ind">-</div>
+      <div id="game-timer">0:00</div>
+    </div>
+    <div id="g-log"></div>
+  </div>
+  <div id="g-bot">
+    <div class="bot-row">
+      <span class="bot-name" id="bot-name">나</span>
+      <span id="hint" style="display:none">카드를 선택하세요! 👆</span>
+      <span id="hcard-cnt" style="margin-left:auto"></span>
+    </div>
+    <div class="bot-played">
+      <span class="bot-played-label">낸 카드:</span>
+      <div id="h-played" class="played-zone">없음</div>
+    </div>
+    <div id="human-hand"></div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay">
+  <div class="ovl-box">
+    <div class="ovl-icon" id="ovl-icon">🎉</div>
+    <div class="ovl-title" id="ovl-title">승리!</div>
+    <div class="ovl-sub" id="ovl-sub"></div>
+    <div class="ovl-btns">
+      <button class="btn-again" onclick="startGame()">다시 하기</button>
+      <button class="btn-home2" onclick="overlay(false);show('s-home');refreshHomeRecords()">홈으로</button>
+    </div>
+    <div class="ovl-stats" id="ovl-stats"></div>
+  </div>
+</div>
+
+<script>
+const BASE_DECK=[
+  ...Array(16).fill(2),...Array(12).fill(3),...Array(9).fill(4),
+  ...Array(8).fill(5),...Array(6).fill(6),...Array(6).fill(7),
+  ...Array(5).fill(8),...Array(4).fill(9),...Array(4).fill(10),
+  ...Array(4).fill(11),...Array(3).fill(12),...Array(3).fill(13),
+  ...Array(3).fill(14),...Array(2).fill(15),16,17,18,19,20
+];
+const AI_NAMES=['유이','하루','소라','카이','아키','렌','미루'];
+
+function cardClass(n){return n<=5?'ca':n<=10?'cb':n<=15?'cc':'cd'}
+function cardEmoji(n){return n<=5?'💧':n<=10?'🌊':n<=15?'⛰️':'🌋'}
+
+function mkCard(n,extra=''){
+  const d=document.createElement('div');
+  d.className=`card ${cardClass(n)} ${extra}`.trim();
+  d.innerHTML=`<div class="c-tl">${n}</div><div class="c-emoji">${cardEmoji(n)}</div><div class="c-num">${n}</div><div class="c-br">${n}</div>`;
+  return d;
+}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function showSetup(){document.getElementById('inp-name').value='';show('s-setup');setTimeout(()=>document.getElementById('inp-name').focus(),120)}
+function showRecords(){renderRecords();show('s-records')}
+function overlay(on){document.getElementById('overlay').classList.toggle('show',on)}
+
+let chosenN=4;
+function setN(n){chosenN=n;document.querySelectorAll('#num-btns button').forEach((b,i)=>b.classList.toggle('sel',i+3===n))}
+
+const LS='fujiflush_v1';
+function getRecords(){try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}}
+function saveRecord(r){const rs=getRecords();rs.unshift(r);if(rs.length>100)rs.splice(100);localStorage.setItem(LS,JSON.stringify(rs))}
+function fmtDate(iso){const d=new Date(iso);return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function fmtDur(s){const m=Math.floor(s/60),sc=s%60;return`${m}:${String(sc).padStart(2,'0')}`}
+
+function refreshHomeRecords(){
+  const rs=getRecords().slice(0,3);
+  const el=document.getElementById('home-recent-list');
+  if(!rs.length){el.innerHTML='<div class="home-rec-empty">아직 기록이 없습니다 🎮</div>';return}
+  el.innerHTML='';
+  rs.forEach((r,i)=>{
+    const medal=i===0?'🥇':i===1?'🥈':'🥉';
+    const div=document.createElement('div');div.className='home-rec-item';
+    div.innerHTML=`<div class="home-rec-medal">${medal}</div>
+      <div class="home-rec-info">
+        <div class="home-rec-winner ${r.humanWon?'win':''}">${r.humanWon?'🏆 ':''}${r.winner} 승리</div>
+        <div class="home-rec-meta">${r.numPlayers}명 · ${r.playerName} 참가 · ${fmtDate(r.date)}</div>
+      </div>
+      <div class="home-rec-time">${fmtDur(r.duration)}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderRecords(){
+  const rs=getRecords();
+  const el=document.getElementById('rec-list');
+  if(!rs.length){el.innerHTML='<div class="rec-empty">아직 기록이 없습니다<br>게임을 플레이해보세요! 🎮</div>';return}
+  el.innerHTML='';
+  rs.forEach((r,i)=>{
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'🎮';
+    const div=document.createElement('div');div.className='rec-item';
+    div.innerHTML=`<div class="rec-medal">${medal}</div>
+      <div class="rec-info">
+        <div class="rec-winner ${r.humanWon?'win':'loss'}">${r.humanWon?'🏆 ':''}${r.winner} 승리 (${r.numPlayers}명)</div>
+        <div class="rec-meta">${r.playerName} 참가 · ${fmtDate(r.date)}</div>
+      </div>
+      <div class="rec-time">${fmtDur(r.duration)}</div>`;
+    el.appendChild(div);
+  });
+}
+
+let G={};
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function startGame(){
+  overlay(false);
+  let name=(document.getElementById('inp-name').value||'').trim()||'플레이어';
+  const n=chosenN,hs=n>=7?5:6;
+  const deck=shuffle([...BASE_DECK]);
+  G={deck,discard:[],
+    players:Array.from({length:n},(_,i)=>({
+      id:i,name:i===0?name:AI_NAMES[i-1],
+      isAI:i!==0,hand:deck.splice(0,hs),played:null,isWinner:false
+    })),
+    cur:0,phase:'playing',winners:[],log:[],
+    startTime:Date.now(),turnCount:0,waiting:false,playerName:name,aiTid:null
+  };
+  show('s-game');renderAll();
+  addLog(`게임 시작! ${n}명 참가 (패 ${hs}장)`,'n');
+  timerStart();setTimeout(startTurn,500);
+}
+
+let timerIv=null;
+function timerStart(){
+  clearInterval(timerIv);
+  timerIv=setInterval(()=>{
+    if(G.phase!=='playing')return;
+    const s=Math.floor((Date.now()-G.startTime)/1000);
+    const el=document.getElementById('game-timer');
+    if(el)el.textContent=fmtDur(s);
+  },500);
+}
+
+function addLog(msg,type='n'){G.log.unshift({msg,type});if(G.log.length>40)G.log.pop();renderLog()}
+function renderLog(){
+  const el=document.getElementById('g-log');if(!el)return;
+  el.innerHTML='';
+  G.log.slice(0,18).forEach(e=>{const d=document.createElement('div');d.className=`log-e log-${e.type}`;d.textContent=e.msg;el.appendChild(d)});
+}
+
+function checkBeats(pidx){
+  const X=G.players[pidx].played;if(X===null)return;
+  const myGroup=G.players.filter(p=>!p.isWinner&&p.played===X);
+  const myVal=myGroup.length*X,isJoin=myGroup.length>1;
+  const otherVals=[...new Set(G.players.filter(p=>!p.isWinner&&p.played!==null&&p.played!==X).map(p=>p.played))];
+  const beaten=new Set(),beatUs=[];
+  for(const Y of otherVals){
+    const theirGroup=G.players.filter(p=>!p.isWinner&&p.played===Y);
+    const theirVal=theirGroup.length*Y;
+    if(myVal>theirVal)theirGroup.forEach(p=>beaten.add(p));
+    else if(isJoin&&theirVal>myVal)beatUs.push(...theirGroup);
+  }
+  if(beaten.size){
+    const who=myGroup.map(p=>p.name).join('+');
+    addLog(`💥 ${who}(합${myVal}) → ${[...beaten].map(p=>p.name).join(', ')} 격파!`,'b');
+    beaten.forEach(p=>flushPlayer(p,true));
+  }
+  if(beatUs.length){
+    addLog(`💥 ${beatUs[0].name}의 카드에 ${myGroup.map(p=>p.name).join('+')} 격파!`,'b');
+    myGroup.forEach(p=>flushPlayer(p,true));
+  }
+}
+
+function flushPlayer(p,draw){
+  if(p.played===null)return;
+  G.discard.push(p.played);p.played=null;
+  if(draw&&G.deck.length>0){p.hand.push(G.deck.pop());addLog(`  ${p.name} 카드 보충`,'n')}
+  const slot=document.getElementById(`pslot-${p.id}`);
+  if(slot){slot.classList.add('pslot-beat');setTimeout(()=>slot.classList.remove('pslot-beat'),650)}
+}
+
+function doPush(pidx){
+  const p=G.players[pidx];if(p.played===null)return false;
+  const X=p.played;
+  const group=G.players.filter(q=>!q.isWinner&&q.played===X);
+  addLog(`🌊 ${group.map(q=>q.name).join('+')}의 ${X} 푸시! (카드 제거)`,'s');
+  group.forEach(q=>{
+    G.discard.push(q.played);q.played=null;
+    const slot=document.getElementById(`pslot-${q.id}`);
+    if(slot){slot.classList.add('pslot-push');setTimeout(()=>slot.classList.remove('pslot-push'),650)}
+  });
+  const newW=[];
+  group.forEach(q=>{if(!q.isWinner&&q.hand.length===0){q.isWinner=true;G.winners.push(q.id);newW.push(q.name)}});
+  if(newW.length)addLog(`🏆 ${newW.join(', ')} 승리!!`,'w');
+  return true;
+}
+
+function startTurn(){
+  if(G.phase!=='playing')return;
+  const p=G.players[G.cur];
+  if(p.isWinner){advance();return}
+  G.turnCount++;addLog(`▸ ${p.name}의 차례`,'t');
+  if(p.played!==null){
+    doPush(G.cur);renderAll();
+    if(G.winners.length){setTimeout(endGame,600);return}
+    setTimeout(toPlay,700);
+  }else{toPlay()}
+}
+
+function toPlay(){
+  if(G.phase!=='playing')return;
+  const p=G.players[G.cur];
+  if(p.isWinner){advance();return}
+  if(p.hand.length===0){advance();return}
+  renderAll();
+  if(p.isAI){G.waiting=false;G.aiTid=setTimeout(()=>aiPlay(G.cur),700+Math.random()*800)}
+  else{G.waiting=true;renderAll()}
+}
+
+function doPlay(pidx,val){
+  if(G.phase!=='playing')return;
+  const p=G.players[pidx];const idx=p.hand.indexOf(val);if(idx===-1)return;
+  p.hand.splice(idx,1);p.played=val;
+  addLog(`${p.name}가 ${val} 냄`,'p');
+  checkBeats(pidx);renderAll();setTimeout(advance,450);
+}
+
+function advance(){
+  if(G.phase!=='playing')return;
+  if(G.winners.length){endGame();return}
+  const n=G.players.length;let nxt=(G.cur+1)%n,tries=0;
+  while(G.players[nxt].isWinner&&tries<n){nxt=(nxt+1)%n;tries++}
+  if(tries>=n){endGame();return}
+  G.cur=nxt;renderAll();setTimeout(startTurn,220);
+}
+
+function humanPlay(val){if(!G.waiting||G.cur!==0||G.phase!=='playing')return;G.waiting=false;doPlay(0,val)}
+
+function aiPlay(pidx){
+  if(G.phase!=='playing')return;
+  const p=G.players[pidx];if(!p||p.hand.length===0){advance();return}
+  const og={};
+  G.players.forEach(q=>{if(q.id!==pidx&&!q.isWinner&&q.played!==null)og[q.played]=(og[q.played]||0)+1});
+  let best=null,bestScore=-Infinity;
+  [...new Set(p.hand)].forEach(card=>{
+    const gc=(og[card]||0)+1,myVal=gc*card;
+    let beats=0,joins=og[card]?1:0,wouldBeat=false;
+    Object.entries(og).forEach(([num,cnt])=>{
+      if(+num===card)return;const tv=cnt*+num;
+      if(myVal>tv)beats++;if(gc>1&&tv>myVal)wouldBeat=true;
+    });
+    const score=beats*20+joins*6-(wouldBeat?15:0)-card*0.4;
+    if(score>bestScore){bestScore=score;best=card}
+  });
+  if(best===null)best=Math.min(...p.hand);
+  doPlay(pidx,best);
+}
+
+function endGame(){
+  if(G.phase==='gameover')return;
+  G.phase='gameover';clearInterval(timerIv);G.waiting=false;
+  const dur=Math.floor((Date.now()-G.startTime)/1000);
+  const wNames=G.winners.map(id=>G.players[id].name);
+  const humanWon=G.winners.includes(0);
+  saveRecord({date:new Date().toISOString(),duration:dur,playerName:G.playerName,
+    numPlayers:G.players.length,winner:wNames.join(', '),humanWon,turns:G.turnCount});
+  document.getElementById('ovl-icon').textContent=humanWon?'🎉':'😢';
+  document.getElementById('ovl-title').textContent=humanWon?'승리!':'패배...';
+  document.getElementById('ovl-sub').textContent=humanWon
+    ?`축하합니다, ${G.playerName}님!\n모든 카드를 없앴습니다!`
+    :`${wNames.join(', ')}가 먼저 카드를 없앴습니다.`;
+  document.getElementById('ovl-stats').innerHTML=`⏱ ${fmtDur(dur)} &nbsp;·&nbsp; 🔄 ${G.turnCount}턴`;
+  renderAll();setTimeout(()=>overlay(true),600);
+}
+
+function renderAll(){renderTop();renderBot();renderDeck();renderLog()}
+
+function renderTop(){
+  const el=document.getElementById('g-top');if(!el)return;el.innerHTML='';
+  G.players.filter(p=>p.isAI).forEach(p=>{
+    const isTurn=p.id===G.cur&&!p.isWinner;
+    const div=document.createElement('div');
+    div.className=`pslot${isTurn?' turn':''}${p.isWinner?' winner':''}`;
+    div.id=`pslot-${p.id}`;
+    const nm=document.createElement('div');nm.className='pname';
+    nm.textContent=p.isWinner?`${p.name} 🏆`:p.name;
+    const zone=document.createElement('div');zone.className='played-zone';
+    if(p.played!==null){zone.style.cssText='border:none;background:transparent;padding:0';zone.appendChild(mkCard(p.played))}
+    else zone.textContent='없음';
+    const hd=document.createElement('div');hd.className='phand';
+    for(let i=0;i<Math.min(p.hand.length,6);i++){const m=document.createElement('div');m.className='mini-card';hd.appendChild(m)}
+    const cnt=document.createElement('div');cnt.className='pcount';cnt.textContent=`패 ${p.hand.length}장`;
+    div.append(nm,zone,hd,cnt);el.appendChild(div);
+  });
+}
+
+function renderBot(){
+  const p=G.players[0];if(!p)return;
+  const isTurn=G.cur===0&&!p.isWinner&&G.phase==='playing'&&G.waiting;
+  document.getElementById('g-bot').classList.toggle('myturn',isTurn);
+  document.getElementById('bot-name').textContent=p.isWinner?`${p.name} 🏆`:p.name;
+  document.getElementById('hint').style.display=isTurn?'':'none';
+  document.getElementById('hcard-cnt').textContent=`패 ${p.hand.length}장`;
+  const hz=document.getElementById('h-played');
+  hz.innerHTML='';hz.className='played-zone';hz.style.cssText='';
+  if(p.played!==null){hz.style.cssText='border:none;background:transparent;padding:0';hz.appendChild(mkCard(p.played))}
+  else hz.textContent='없음';
+  const hh=document.getElementById('human-hand');hh.innerHTML='';
+  [...p.hand].sort((a,b)=>a-b).forEach(v=>{
+    const c=mkCard(v,'hand-card'+(isTurn?' clickable':''));
+    if(isTurn)c.onclick=()=>humanPlay(v);
+    hh.appendChild(c);
+  });
+}
+
+function renderDeck(){
+  const el=document.getElementById('deck-cnt');
+  if(el)el.textContent=`남은 카드: ${G.deck?G.deck.length:0}장`;
+  const pile=document.getElementById('deck-pile');
+  if(pile)pile.textContent=(G.deck&&G.deck.length>0)?'🂠':'📭';
+  const ind=document.getElementById('turn-ind');
+  if(ind&&G.players&&G.players[G.cur]){
+    const c=G.players[G.cur];
+    ind.textContent=c.isWinner?'게임 종료':`${c.name}의 차례${G.waiting&&G.cur===0?' ✏️':''}`;
+  }
+}
+
+setN(4);refreshHomeRecords();
+</script>
+</body>
+</html>
