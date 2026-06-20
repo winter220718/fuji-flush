@@ -609,7 +609,6 @@ function isMyTurn() {
 }
 
 function normalizeGame(game) {
-  // Firebase may return arrays as objects; normalize them
   if (!game) return game;
   if (game.deck && !Array.isArray(game.deck)) game.deck = Object.values(game.deck);
   if (game.discard && !Array.isArray(game.discard)) game.discard = Object.values(game.discard);
@@ -617,8 +616,11 @@ function normalizeGame(game) {
   if (game.winners && !Array.isArray(game.winners)) game.winners = Object.values(game.winners);
   if (game.log && !Array.isArray(game.log)) game.log = Object.values(game.log);
   if (game.players) {
-    Object.values(game.players).forEach(p => {
+    Object.keys(game.players).forEach(id => {
+      const p = game.players[id];
       if (p.hand && !Array.isArray(p.hand)) p.hand = Object.values(p.hand);
+      // Firebase strips null values — restore them so logic works correctly
+      if (!('played' in p) || p.played === undefined) p.played = null;
     });
   }
   return game;
