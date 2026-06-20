@@ -152,7 +152,7 @@ input{font-family:inherit}
 #s-game{flex-direction:column;padding:8px 8px 6px;gap:5px;overflow:hidden;
   background:linear-gradient(150deg,var(--bg) 0%,var(--bg2) 100%)}
 
-#g-top{display:flex;gap:5px;flex-shrink:0;width:100%;flex-wrap:wrap}
+#g-top{display:flex;gap:8px;flex-shrink:0;justify-content:center;flex-wrap:wrap}
 
 #g-mid{display:flex;gap:8px;justify-content:center;align-items:stretch;
   flex-shrink:0;height:150px}
@@ -176,11 +176,16 @@ input{font-family:inherit}
 
 .pslot{background:rgba(255,255,255,0.90);
   border:1.5px solid rgba(0,0,0,0.09);border-radius:12px;
-  padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;
-  flex:1;min-width:0;box-shadow:0 1px 6px rgba(0,0,0,.06);
+  padding:6px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  width:110px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.06);
   transition:border-color .25s,box-shadow .25s,background .25s}
-.pslot.turn{border-color:#1f2937;background:#fff;
-  box-shadow:0 0 0 2.5px rgba(31,41,55,.25),0 2px 10px rgba(0,0,0,.08)}
+.pslot.turn{border-color:#1f2937;background:#e0f2fe;
+  box-shadow:0 0 0 3px rgba(31,41,55,.4),0 4px 16px rgba(0,0,0,.12);
+  animation:slotTurnPulse 1.4s ease-in-out infinite}
+@keyframes slotTurnPulse{
+  0%,100%{box-shadow:0 0 0 2px rgba(31,41,55,.4),0 2px 10px rgba(0,0,0,.08)}
+  50%{box-shadow:0 0 0 5px rgba(31,41,55,.15),0 6px 22px rgba(0,0,0,.1)}
+}
 .pslot.winner{border-color:#d97706;background:#fffbeb}
 .pslot.loser{border-color:#dc2626;background:#fff1f2}
 .pname{font-size:13px;font-weight:700;color:#111827;text-align:center;
@@ -215,10 +220,32 @@ input{font-family:inherit}
 .card.clickable:hover{transform:translateY(-18px) scale(1.05)!important;
   box-shadow:0 16px 32px rgba(0,0,0,.25);z-index:20!important}
 
-.pslot-beat{animation:slotBeat .6s ease}
-@keyframes slotBeat{0%,100%{background:rgba(255,255,255,0.18)}40%{background:rgba(220,80,80,.2)}}
-.pslot-push{animation:slotPush .6s ease}
-@keyframes slotPush{0%,100%{background:rgba(255,255,255,0.18)}40%{background:rgba(65,130,240,.2)}}
+.anim-beat{animation:slotBeat 0.9s ease forwards!important}
+@keyframes slotBeat{
+  0%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+  15%{transform:scale(1.06);background:rgba(220,38,38,0.22);box-shadow:0 0 0 3px rgba(220,38,38,.5),0 4px 18px rgba(220,38,38,.3)}
+  30%{transform:translateX(-5px) scale(1.03);background:rgba(220,38,38,0.18)}
+  45%{transform:translateX(5px) scale(1.03)}
+  60%{transform:translateX(-3px);background:rgba(220,38,38,0.12)}
+  75%{transform:translateX(3px)}
+  90%{transform:scale(1.01)}
+  100%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+}
+.anim-push{animation:slotPush 0.8s ease forwards!important}
+@keyframes slotPush{
+  0%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+  30%{transform:scale(1.05);background:#eff6ff;box-shadow:0 0 0 3px rgba(59,130,246,.5),0 4px 18px rgba(59,130,246,.25)}
+  70%{transform:scale(1.02);background:#f0f9ff}
+  100%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+}
+.card.anim-beat-card{animation:cardBeat 0.9s ease forwards!important}
+@keyframes cardBeat{
+  0%{transform:scale(1)}
+  20%{transform:scale(1.15) rotate(-3deg);filter:brightness(0.8) saturate(2)}
+  50%{transform:scale(0.9) rotate(2deg);filter:brightness(0.7)}
+  80%{transform:scale(1.05) rotate(-1deg)}
+  100%{transform:scale(1);filter:none}
+}
 
 #g-deck{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
 .deck-pile{width:60px;height:86px;background:#1f2937;border-radius:12px;
@@ -577,8 +604,15 @@ function listenRoom(code) {
       renderLobby(room, code);
     } else if (room.status === 'playing') {
       if (currentScreen !== 's-game') { show('s-game'); timerStart(); }
+      const prevEvent = G?.lastEvent;
       G = normalizeGame(room.game);
       renderAll();
+      // 이벤트가 새로 왔으면 애니메이션 트리거
+      if (G.lastEvent && G.lastEvent.ts !== prevEvent?.ts) {
+        const ev = G.lastEvent;
+        if (ev.type === 'beat') triggerAnimation(ev.ids, 'anim-beat');
+        if (ev.type === 'push') triggerAnimation(ev.ids, 'anim-push');
+      }
       if (G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
       if (G.phase === 'playing' && amHost && isCurrentPlayerAI()) { aiProcessing = false; setTimeout(doAiTurn, 900); }
       rescheduleWatchdog();
@@ -688,7 +722,6 @@ async function doAiTurn() {
   const p = G.players[curId];
   if (!p || !p.isAI) return;
   if (p.isWinner) {
-    // 이미 승리한 상태인데 턴이 돌아온 불일치 → 즉시 gameover
     const g = dc(G); g.phase = 'gameover'; await writeGame(g); return;
   }
   aiProcessing = true;
@@ -698,28 +731,41 @@ async function doAiTurn() {
     g.turnCount++;
     addLog(g, `▸ ${ap.name}의 차례`, 't');
 
-    // 1단계: push-through (이전 턴에 낸 카드가 있으면)
+    // ── Phase 1: push-through ──
     if (ap.played !== null) {
-      const wBefore = g.winners.length;
-      runPush(g, curId);
-      if (g.winners.length > wBefore) { g.phase = 'gameover'; await writeGame(g); return; }
+      // Show push animation then resolve
+      const pushGroup = g.playerOrder.filter(i => !g.players[i].isWinner && g.players[i].played === ap.played);
+      g.lastEvent = { type: 'push', ids: pushGroup, ts: Date.now() };
+      await writeGame(g);          // 모든 클라이언트 push 애니메이션 표시
+      await sleep(900);
+      const newW = runPush(g, curId);
+      if (newW.length) { g.phase = 'gameover'; await writeGame(g); return; }
     }
 
-    // 2단계: 새 카드 내기
+    // ── Phase 2: 새 카드 내기 ──
     if (!ap.isWinner && ap.hand && ap.hand.length > 0) {
       const val = ap.hand[Math.floor(Math.random() * ap.hand.length)];
       ap.hand.splice(ap.hand.indexOf(val), 1);
       ap.played = val;
       addLog(g, `${ap.name}가 ${val} 냄`, 'p');
-      runBeatCheck(g, curId);
+      // 카드 공개 — beat 전에 먼저 표시
+      g.lastEvent = { type: 'play', ids: [curId], ts: Date.now() };
+      await writeGame(g);
+      await sleep(700);            // 잠시 카드 노출 후 격파 계산
+      const beatenIds = runBeatCheck(g, curId);
+      if (beatenIds.length) {
+        g.lastEvent = { type: 'beat', ids: beatenIds, ts: Date.now() };
+        await writeGame(g);        // 격파 애니메이션
+        await sleep(1000);
+      }
     } else if (!ap.isWinner) {
-      // 패가 0장 + 낸 카드 없음 (덱 고갈로 카드를 못 받은 경우) → 즉시 승리
       ap.isWinner = true;
       if (!g.winners.includes(curId)) { g.winners.push(curId); addLog(g, `🏆 ${ap.name} 승리!!`, 'w'); }
       g.phase = 'gameover'; await writeGame(g); return;
     }
 
     g.cur = nextCur(g);
+    g.lastEvent = null;
     await writeGame(g);
   } catch(e) {
     console.error('doAiTurn error:', e);
@@ -747,8 +793,12 @@ function normalizeGame(game) {
       if (!('played' in p) || p.played === undefined) p.played = null;
     });
   }
+  if (game.lastEvent && game.lastEvent.ids && !Array.isArray(game.lastEvent.ids))
+    game.lastEvent.ids = Object.values(game.lastEvent.ids);
   return game;
 }
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function addLog(g, msg, type='n') {
   if (!g.log) g.log = [];
@@ -756,8 +806,9 @@ function addLog(g, msg, type='n') {
   if (g.log.length > 30) g.log.pop();
 }
 
+// returns array of beaten player IDs
 function runBeatCheck(g, actorId) {
-  const X = g.players[actorId].played; if (X===null) return g;
+  const X = g.players[actorId].played; if (X===null) return [];
   const myGroup = g.playerOrder.filter(id => !g.players[id].isWinner && g.players[id].played===X);
   const myVal = myGroup.length * X, isJoin = myGroup.length > 1;
   const otherVals = [...new Set(g.playerOrder.filter(id => !g.players[id].isWinner && g.players[id].played!==null && g.players[id].played!==X).map(id=>g.players[id].played))];
@@ -768,16 +819,14 @@ function runBeatCheck(g, actorId) {
     if (myVal > theirVal) theirGroup.forEach(id => beaten.add(id));
     else if (isJoin && theirVal > myVal) beatUs.push(...theirGroup);
   }
+  const allBeaten = [];
   if (beaten.size) {
     const who = myGroup.map(id=>g.players[id].name).join('+');
     addLog(g, `💥 ${who}(합${myVal}) → ${[...beaten].map(id=>g.players[id].name).join(', ')} 격파!`, 'b');
-    beaten.forEach(id => flushPlayer(g, id, true));
+    beaten.forEach(id => { allBeaten.push(id); flushPlayer(g, id, true); });
   }
-  if (beatUs.length) {
-    addLog(g, `💥 ${g.players[beatUs[0]].name}의 카드에 ${myGroup.map(id=>g.players[id].name).join('+')} 격파!`, 'b');
-    myGroup.forEach(id => flushPlayer(g, id, true));
-  }
-  return g;
+  // beatUs(합산이 상대보다 낮을 때 불이익) 로직 제거 — 조인은 이점만 주고 페널티 없음
+  return allBeaten;
 }
 
 function flushPlayer(g, id, draw) {
@@ -786,8 +835,9 @@ function flushPlayer(g, id, draw) {
   if (draw && g.deck.length > 0) { p.hand.push(g.deck.pop()); addLog(g, `  ${p.name} 카드 보충`, 'n'); }
 }
 
+// returns array of push-winner IDs
 function runPush(g, id) {
-  const p = g.players[id]; if (!p||p.played===null) return false;
+  const p = g.players[id]; if (!p||p.played===null) return [];
   const X = p.played;
   const group = g.playerOrder.filter(i => !g.players[i].isWinner && g.players[i].played===X);
   addLog(g, `🌊 ${group.map(i=>g.players[i].name).join('+')}의 ${X} 푸시!`, 's');
@@ -799,7 +849,30 @@ function runPush(g, id) {
     }
   });
   if (newW.length) addLog(g, `🏆 ${newW.join(', ')} 승리!!`, 'w');
-  return true;
+  return newW; // returns winner names (non-empty = game over)
+}
+
+// animate beat/push events for given player IDs
+function triggerAnimation(ids, animClass) {
+  if (!ids || !ids.length) return;
+  ids.forEach(id => {
+    const el = id === myUid
+      ? document.getElementById('g-bot')
+      : document.getElementById(`pslot-${id}`);
+    if (!el) return;
+    el.classList.remove('anim-beat','anim-push');
+    void el.offsetWidth; // force reflow
+    el.classList.add(animClass);
+    el.addEventListener('animationend', () => el.classList.remove(animClass), {once:true});
+    // also animate played card inside the slot
+    const card = el.querySelector('.card');
+    if (card) {
+      card.classList.remove('anim-beat-card');
+      void card.offsetWidth;
+      card.classList.add('anim-beat-card');
+      card.addEventListener('animationend', ()=>card.classList.remove('anim-beat-card'), {once:true});
+    }
+  });
 }
 
 function nextCur(g) {
@@ -828,16 +901,19 @@ async function handleMyTurnStart() {
     if (p.played !== null) {
       const g = dc(G); g.turnCount++;
       addLog(g, `▸ ${p.name}의 차례`, 't');
-      const wBefore = g.winners.length;
-      runPush(g, myUid);
-      if (g.winners.length > wBefore) { g.phase='gameover'; myTurnBusy=false; await writeGame(g); return; }
-      myTurnBusy = false; // clear before write so onValue sees play phase
+      const pushGroup = g.playerOrder.filter(i => !g.players[i].isWinner && g.players[i].played === p.played);
+      g.lastEvent = { type: 'push', ids: pushGroup, ts: Date.now() };
+      await writeGame(g);           // 푸시 애니메이션 표시
+      await sleep(900);
+      const newW = runPush(g, myUid);
+      if (newW.length) { g.phase='gameover'; myTurnBusy=false; await writeGame(g); return; }
+      myTurnBusy = false;
+      g.lastEvent = null;
       await writeGame(g);
       if (G && G.phase==='playing' && isMyTurn() && G.players[myUid]?.played===null) renderAll();
       return;
     }
 
-    // Play phase
     myTurnBusy = false;
     renderAll();
   } catch(e) {
@@ -857,8 +933,18 @@ window.onlinePlay = async (val) => {
     g.players[myUid].hand.splice(idx, 1);
     g.players[myUid].played = val;
     addLog(g, `${p.name}가 ${val} 냄`, 'p');
-    runBeatCheck(g, myUid);
+    // 카드 공개 먼저
+    g.lastEvent = { type: 'play', ids: [myUid], ts: Date.now() };
+    await writeGame(g);
+    await sleep(600);
+    const beatenIds = runBeatCheck(g, myUid);
+    if (beatenIds.length) {
+      g.lastEvent = { type: 'beat', ids: beatenIds, ts: Date.now() };
+      await writeGame(g);
+      await sleep(1000);
+    }
     g.cur = nextCur(g);
+    g.lastEvent = null;
     await writeGame(g);
   } catch(e) {
     console.error('onlinePlay error:', e);
@@ -877,19 +963,23 @@ async function writeGame(g) {
   if (!roomCode) return;
   const status = g.phase==='gameover' ? 'ended' : 'playing';
   await update(ref(db, `rooms/${roomCode}`), { status, game: g });
-  if (status === 'ended') showEndOverlay();
+  // showEndOverlay는 onValue 리스너(listenRoom)에서만 호출 — 여기서 호출 시 중복 기록 저장됨
 }
 
+let _lastSavedGame = 0;
 function showEndOverlay() {
   if (!G) return;
   const dur = Math.floor((Date.now()-G.startTime)/1000);
-  // 첫 번째로 카드를 비운 사람이 승자 (winners[0])
   const winnerId = G.winners[0];
   const winnerName = winnerId ? G.players[winnerId]?.name : '?';
   const humanWon = G.winners.includes(myUid);
   const pName = getSavedName() || '플레이어';
-  saveRecord({ date:new Date().toISOString(), duration:dur, playerName:pName,
-    numPlayers:G.playerOrder.length, winner:winnerName, humanWon, turns:G.turnCount });
+  // 같은 게임을 두 번 저장하지 않도록 startTime으로 중복 방지
+  if (G.startTime !== _lastSavedGame) {
+    _lastSavedGame = G.startTime;
+    saveRecord({ date:new Date().toISOString(), duration:dur, playerName:pName,
+      numPlayers:G.playerOrder.length, winner:winnerName, humanWon, turns:G.turnCount });
+  }
   const box = document.querySelector('.ovl-box');
   if(box){ box.classList.toggle('ovl-win', humanWon); box.classList.toggle('ovl-loss', !humanWon); }
   document.getElementById('ovl-icon').textContent = humanWon ? '🎉' : '😭';
@@ -931,14 +1021,39 @@ function renderTop() {
     const div = document.createElement('div');
     div.className = `pslot${isTurn?' turn':''}${p.isWinner?' winner':''}${isLoser?' loser':''}`;
     div.id = `pslot-${id}`;
+
+    // 이름
     const nm = document.createElement('div'); nm.className='pname';
-    nm.textContent = p.isWinner ? `🏆 ${p.name}` : isLoser ? `💀 ${p.name}` : p.name;
+    nm.textContent = p.isWinner ? `🏆 ${p.name}` : isLoser ? `💀 ${p.name}` : isTurn ? `▶ ${p.name}` : p.name;
+
+    // 낸 카드 영역
     const zone = document.createElement('div'); zone.className='played-zone';
     if(p.played!==null){zone.style.cssText='border:none;background:transparent;padding:0';zone.appendChild(mkCard(p.played));}
     else { const t=document.createElement('span'); t.style.cssText='font-size:11px;color:#aaa'; t.textContent='없음'; zone.appendChild(t); }
+
+    // 손패 팬 레이아웃
+    const fanWrap = document.createElement('div');
+    fanWrap.style.cssText='display:flex;align-items:flex-end;justify-content:center;height:28px;position:relative;';
+    const n = p.hand.length;
+    const maxAngle = Math.min(24, n * 3);
+    for (let i = 0; i < n; i++) {
+      const mc = document.createElement('div');
+      const angle = n > 1 ? (i/(n-1) - 0.5) * maxAngle : 0;
+      const lift = n > 1 ? Math.abs(angle) * 0.5 : 0;
+      const overlap = n > 1 ? Math.max(-10, -4 * Math.log(n+1)) : 0;
+      mc.style.cssText = `width:12px;height:18px;border-radius:3px;border:1.5px solid #c8d0dc;background:#eef2f7;
+        flex-shrink:0;transform:rotate(${angle}deg) translateY(${-lift}px);
+        margin-left:${i===0?'0':overlap+'px'};z-index:${i+1};position:relative`;
+      fanWrap.appendChild(mc);
+    }
+    if (n === 0 && !p.isWinner) {
+      const t = document.createElement('span');
+      t.style.cssText='font-size:10px;color:#9ca3af';
+      t.textContent='패없음'; fanWrap.appendChild(t);
+    }
     const cnt = document.createElement('div'); cnt.className='pcount';
-    cnt.textContent = p.isWinner ? '승리!' : `패 ${p.hand.length}장`;
-    div.append(nm,zone,cnt); el.appendChild(div);
+    cnt.textContent = p.isWinner ? '승리!' : `${p.hand.length}장`;
+    div.append(nm, zone, fanWrap, cnt); el.appendChild(div);
   });
 }
 
