@@ -547,7 +547,8 @@ function listenRoom(code) {
       G = normalizeGame(room.game);
       renderAll();
       if (G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
-      if (G.phase === 'playing' && amHost && isCurrentPlayerAI()) setTimeout(doAiTurn, 900);
+      if (G.phase === 'playing' && amHost && isCurrentPlayerAI()) { aiProcessing = false; setTimeout(doAiTurn, 900); }
+      rescheduleWatchdog();
     } else if (room.status === 'ended') {
       G = normalizeGame(room.game);
       renderAll();
@@ -629,6 +630,19 @@ function isMyTurn() {
   return G.playerOrder[G.cur] === myUid;
 }
 
+let watchdogTimer = null;
+function rescheduleWatchdog() {
+  if (!amHost) return;
+  clearTimeout(watchdogTimer);
+  watchdogTimer = setTimeout(() => {
+    if (G && G.phase === 'playing' && amHost && isCurrentPlayerAI()) {
+      console.warn('[watchdog] AI turn stuck, retrying');
+      aiProcessing = false;
+      doAiTurn();
+    }
+  }, 3000);
+}
+
 function isCurrentPlayerAI() {
   if (!G || !G.playerOrder) return false;
   const cur = G.players[G.playerOrder[G.cur]];
@@ -639,31 +653,49 @@ async function doAiTurn() {
   if (!G || G.phase !== 'playing' || aiProcessing) return;
   const curId = G.playerOrder[G.cur];
   const p = G.players[curId];
-  if (!p || !p.isAI || p.isWinner) return;
+  if (!p || !p.isAI) return;
+  if (p.isWinner) {
+    // cur가 이미 winner를 가리키는 불일치 상태 → 강제로 턴 넘기기
+    const g = dc(G); g.cur = nextCur(g);
+    if (g.cur === G.cur) { g.phase = 'gameover'; }
+    await writeGame(g); return;
+  }
   aiProcessing = true;
-  const g = dc(G);
-  const ap = g.players[curId];
+  try {
+    const g = dc(G);
+    const ap = g.players[curId];
+    g.turnCount++;
+    addLog(g, `▸ ${ap.name}의 차례`, 't');
 
-  // push-through: 이미 낸 카드가 있으면 먼저 처리
-  if (ap.played !== null) {
-    runBeatCheck(g, curId);
-    if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); aiProcessing = false; return; }
+    // 1단계: push-through (이전 턴에 낸 카드가 있으면)
+    if (ap.played !== null) {
+      const wBefore = g.winners.length;
+      runPush(g, curId);
+      if (g.winners.length > wBefore) { g.phase = 'gameover'; await writeGame(g); return; }
+    }
+
+    // 2단계: 새 카드 내기
+    if (!ap.isWinner && ap.hand && ap.hand.length > 0) {
+      const val = ap.hand[Math.floor(Math.random() * ap.hand.length)];
+      ap.hand.splice(ap.hand.indexOf(val), 1);
+      ap.played = val;
+      addLog(g, `${ap.name}가 ${val} 냄`, 'p');
+      const wBefore2 = g.winners.length;
+      runBeatCheck(g, curId);
+      if (g.winners.length > wBefore2) { g.phase = 'gameover'; await writeGame(g); return; }
+    } else if (!ap.isWinner) {
+      ap.isWinner = true;
+      if (!g.winners.includes(curId)) { g.winners.push(curId); addLog(g, `🏆 ${ap.name} 승리!!`, 'w'); }
+      g.phase = 'gameover';
+    }
+
     g.cur = nextCur(g);
     await writeGame(g);
+  } catch(e) {
+    console.error('doAiTurn error:', e);
+  } finally {
     aiProcessing = false;
-    return;
   }
-
-  const val = ap.hand[Math.floor(Math.random() * ap.hand.length)];
-  const idx = ap.hand.indexOf(val);
-  ap.hand.splice(idx, 1);
-  ap.played = val;
-  addLog(g, `${ap.name}가 ${val} 냄`, 'p');
-  runBeatCheck(g, curId);
-  if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); aiProcessing = false; return; }
-  g.cur = nextCur(g);
-  await writeGame(g);
-  aiProcessing = false;
 }
 
 function normalizeGame(game) {
@@ -749,26 +781,39 @@ function nextCur(g) {
 // ── ONLINE TURN HANDLING ──
 async function handleMyTurnStart() {
   if (myTurnBusy) return;
-  const p = G.players[myUid];
-  if (!p || p.isWinner) { myTurnBusy=true; await writeAndAdvance(dc(G)); myTurnBusy=false; return; }
-  if (p.hand.length===0 && p.played===null) { myTurnBusy=true; await writeAndAdvance(dc(G)); myTurnBusy=false; return; }
+  myTurnBusy = true;
+  try {
+    const p = G.players[myUid];
+    if (!p || p.isWinner) { await writeAndAdvance(dc(G)); return; }
+    if (p.hand.length===0 && p.played===null) {
+      const g = dc(G);
+      g.players[myUid].isWinner = true;
+      if (!g.winners.includes(myUid)) { g.winners.push(myUid); addLog(g, `🏆 ${p.name} 승리!!`, 'w'); }
+      g.phase = 'gameover';
+      myTurnBusy = false;
+      await writeGame(g);
+      return;
+    }
 
-  if (p.played !== null) {
-    // Push phase
-    myTurnBusy = true;
-    const g = dc(G); g.turnCount++;
-    addLog(g, `▸ ${p.name}의 차례`, 't');
-    runPush(g, myUid);
-    if (g.winners.length) { g.phase='gameover'; await writeGame(g); myTurnBusy=false; return; }
-    await writeGame(g);
+    if (p.played !== null) {
+      const g = dc(G); g.turnCount++;
+      addLog(g, `▸ ${p.name}의 차례`, 't');
+      const wBefore = g.winners.length;
+      runPush(g, myUid);
+      if (g.winners.length > wBefore) { g.phase='gameover'; myTurnBusy=false; await writeGame(g); return; }
+      myTurnBusy = false; // clear before write so onValue sees play phase
+      await writeGame(g);
+      if (G && G.phase==='playing' && isMyTurn() && G.players[myUid]?.played===null) renderAll();
+      return;
+    }
+
+    // Play phase
     myTurnBusy = false;
-    // onValue will re-fire; now played===null so we'll enter play phase
-    return;
+    renderAll();
+  } catch(e) {
+    console.error('handleMyTurnStart error:', e);
+    myTurnBusy = false;
   }
-
-  // Play phase - show clickable hand
-  myTurnBusy = false;
-  renderAll();
 }
 
 window.onlinePlay = async (val) => {
@@ -776,17 +821,22 @@ window.onlinePlay = async (val) => {
   const p = G.players[myUid];
   if (!p || p.hand.indexOf(val)===-1) return;
   myTurnBusy = true;
-
-  const g = dc(G);
-  const idx = g.players[myUid].hand.indexOf(val);
-  g.players[myUid].hand.splice(idx, 1);
-  g.players[myUid].played = val;
-  addLog(g, `${p.name}가 ${val} 냄`, 'p');
-  runBeatCheck(g, myUid);
-  if (g.winners.length) { g.phase='gameover'; await writeGame(g); myTurnBusy=false; return; }
-  g.cur = nextCur(g);
-  await writeGame(g);
-  myTurnBusy = false;
+  try {
+    const g = dc(G);
+    const idx = g.players[myUid].hand.indexOf(val);
+    g.players[myUid].hand.splice(idx, 1);
+    g.players[myUid].played = val;
+    addLog(g, `${p.name}가 ${val} 냄`, 'p');
+    const wBefore = g.winners.length;
+    runBeatCheck(g, myUid);
+    if (g.winners.length > wBefore) { g.phase='gameover'; await writeGame(g); return; }
+    g.cur = nextCur(g);
+    await writeGame(g);
+  } catch(e) {
+    console.error('onlinePlay error:', e);
+  } finally {
+    myTurnBusy = false;
+  }
 };
 
 async function writeAndAdvance(g) {
