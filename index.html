@@ -67,9 +67,7 @@ input{font-family:inherit}
 .btn-secondary{flex:1;padding:14px;border-radius:12px;font-size:16px;font-weight:700;
   color:#1f2937;background:var(--surface);border:1.5px solid #1f2937}
 .btn-secondary:hover{background:#f9fafb}
-.btn-ai{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
-  color:var(--txt2);background:var(--surface);border:1px solid var(--border)}
-.btn-ai:hover{color:var(--txt);border-color:#1f2937}
+
 
 /* SETUP (AI mode) */
 #s-setup{flex-direction:column;align-items:center;justify-content:center;gap:16px}
@@ -270,7 +268,6 @@ input{font-family:inherit}
     <button class="btn-primary" onclick="goCreate()">🏠 방 만들기</button>
     <button class="btn-secondary" onclick="goJoin()">🚪 방 참가</button>
   </div>
-  <button class="btn-ai" onclick="goAI()">🤖 AI와 게임</button>
 </div>
 
 <!-- CREATE ROOM SETUP -->
@@ -325,31 +322,6 @@ input{font-family:inherit}
     <div class="lobby-status" id="lobby-status">플레이어를 기다리는 중...</div>
     <button class="btn-start" id="btn-lobby-start" style="display:none;width:100%" onclick="startMultiGame()">게임 시작!</button>
     <button class="btn-back" style="width:100%" onclick="leaveRoom()">← 나가기</button>
-  </div>
-</div>
-
-<!-- AI SETUP -->
-<div id="s-setup" class="screen">
-  <div class="setup-box">
-    <h2>🤖 AI 게임 설정</h2>
-    <div class="field">
-      <label>내 이름</label>
-      <input id="inp-ai-name" type="text" placeholder="이름 입력" maxlength="12" autocomplete="off" style="width:100%;padding:11px 13px;background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;color:var(--txt);font-size:15px;outline:none;font-family:'Suit',sans-serif">
-    </div>
-    <div class="field">
-      <label>총 플레이어 수 (나 + AI)</label>
-      <div class="num-btns" id="num-btns">
-        <button onclick="setN(3)">3명</button>
-        <button onclick="setN(4)" class="sel">4명</button>
-        <button onclick="setN(5)">5명</button>
-        <button onclick="setN(6)">6명</button>
-        <button onclick="setN(7)">7명</button>
-        <button onclick="setN(8)">8명</button>
-      </div>
-    </div>
-    <div class="setup-hint">카드를 모두 먼저 없애면 승리!<br>같은 숫자 합산 → 낮은 합산값 격파<br>아무도 못 이기면 다음 턴에 푸시로 제거</div>
-    <button class="btn-start" onclick="startAIGame()">게임 시작!</button>
-    <button class="btn-back" onclick="show('s-home');refreshHomeRecords()">← 뒤로</button>
   </div>
 </div>
 
@@ -433,12 +405,9 @@ const BASE_DECK = [
 ];
 
 let G = null;          // current game state
-let myId = null;       // my player id (uid for online, '0' for AI game)
-let isOnline = false;  // online vs AI mode
 let roomCode = null;
 let roomUnsub = null;
 let myTurnBusy = false;
-let chosenN = 4;
 let timerIv = null;
 
 // ── UTILS ──
@@ -634,35 +603,10 @@ window.startMultiGame = async () => {
   await update(ref(db, `rooms/${roomCode}`), { status: 'playing', game });
 };
 
-// ── AI GAME ──
-window.goAI = () => { const s=getSavedName(); if(s)document.getElementById('inp-ai-name').value=s; show('s-setup'); setTimeout(()=>document.getElementById('inp-ai-name').focus(),120); };
-window.setN = (n) => { chosenN=n; document.querySelectorAll('#num-btns button').forEach((b,i)=>b.classList.toggle('sel',i+3===n)); };
-
-window.startAIGame = () => {
-  overlayOn(false);
-  isOnline = false;
-  const name = myName('inp-ai-name');
-  const n = chosenN, hs = n>=7?5:6;
-  const deck = shuffle([...BASE_DECK]);
-  const AI_NAMES = ['AI 1','AI 2','AI 3','AI 4','AI 5','AI 6','AI 7'];
-  const playerOrder = Array.from({length:n},(_,i)=>String(i));
-  const ps = {};
-  playerOrder.forEach((id,i) => {
-    ps[id] = { name: i===0?name:AI_NAMES[i-1], hand: deck.splice(0,hs), played: null, isWinner: false, isAI: i!==0 };
-  });
-  myId = '0';
-  G = { playerOrder, players: ps, deck, discard: [],
-    cur: 0, phase: 'playing', winners: [], turnCount: 0,
-    startTime: Date.now(), log: [`게임 시작! ${n}명 참가 (패 ${hs}장)`],
-    playerName: name };
-  show('s-game'); renderAll(); timerStart();
-  setTimeout(startTurn, 500);
-};
-
 // ── GAME LOGIC ──
 function isMyTurn() {
   if (!G || !G.playerOrder) return false;
-  return G.playerOrder[G.cur] === (isOnline ? myUid : myId);
+  return G.playerOrder[G.cur] === myUid;
 }
 
 function normalizeGame(game) {
@@ -802,91 +746,22 @@ function showEndOverlay() {
   if (!G) return;
   const dur = Math.floor((Date.now()-G.startTime)/1000);
   const wNames = G.winners.map(id => G.players[id].name);
-  const humanWon = isOnline ? G.winners.includes(myUid) : G.winners.includes('0');
-  const pName = myName();
+  const humanWon = G.winners.includes(myUid);
+  const pName = getSavedName() || '플레이어';
   saveRecord({ date:new Date().toISOString(), duration:dur, playerName:pName,
     numPlayers:G.playerOrder.length, winner:wNames.join(', '), humanWon, turns:G.turnCount });
   document.getElementById('ovl-icon').textContent = humanWon?'🎉':'😢';
   document.getElementById('ovl-title').textContent = humanWon?'승리!':'패배...';
-  const meP = isOnline ? G.players[myUid] : G.players['0'];
+  const meP = G.players[myUid];
   document.getElementById('ovl-sub').textContent = humanWon
     ? `축하합니다, ${meP?.name}님!\n모든 카드를 없앴습니다!`
     : `${wNames.join(', ')}가 먼저 카드를 없앴습니다.`;
   document.getElementById('ovl-stats').innerHTML = `⏱ ${fmtDur(dur)} &nbsp;·&nbsp; 🔄 ${G.turnCount}턴`;
-  const btn = document.getElementById('ovl-again');
-  btn.onclick = isOnline ? null : () => startAIGame();
-  btn.style.display = isOnline ? 'none' : '';
+  document.getElementById('ovl-again').style.display = 'none';
   overlayOn(true);
 }
 
-// ── LOCAL AI TURN ──
-function startTurn() {
-  if (!G||G.phase!=='playing') return;
-  const curId = G.playerOrder[G.cur];
-  const p = G.players[curId];
-  if (p.isWinner) { advance(); return; }
-  G.turnCount++;
-  addLog(G, `▸ ${p.name}의 차례`, 't');
-  if (p.played!==null) {
-    runPush(G, curId); renderAll();
-    if (G.winners.length) { setTimeout(endLocalGame,600); return; }
-    setTimeout(toPlay, 700);
-  } else { toPlay(); }
-}
-
-function toPlay() {
-  if (!G||G.phase!=='playing') return;
-  const curId = G.playerOrder[G.cur];
-  const p = G.players[curId];
-  if (p.isWinner) { advance(); return; }
-  if (p.hand.length===0) { advance(); return; }
-  renderAll();
-  if (p.isAI) setTimeout(()=>aiPlay(curId), 700+Math.random()*800);
-}
-
-function doPlay(id, val) {
-  if (!G||G.phase!=='playing') return;
-  const p = G.players[id]; const idx = p.hand.indexOf(val); if (idx===-1) return;
-  p.hand.splice(idx,1); p.played=val;
-  addLog(G, `${p.name}가 ${val} 냄`, 'p');
-  runBeatCheck(G, id); renderAll();
-  if (G.winners.length) { setTimeout(endLocalGame,600); return; }
-  setTimeout(advance, 450);
-}
-
-function advance() {
-  if (!G||G.phase!=='playing') return;
-  G.cur = nextCur(G); renderAll(); setTimeout(startTurn, 220);
-}
-
-window.humanPlay = (val) => {
-  if (isOnline) { window.onlinePlay(val); return; }
-  if (!isMyTurn()||G.phase!=='playing') return;
-  doPlay(myId, val);
-};
-
-function aiPlay(id) {
-  if (!G||G.phase!=='playing') return;
-  const p = G.players[id]; if (!p||p.hand.length===0) { advance(); return; }
-  const og = {};
-  G.playerOrder.forEach(i => { if(i!==id&&!G.players[i].isWinner&&G.players[i].played!==null) og[G.players[i].played]=(og[G.players[i].played]||0)+1; });
-  let best=null, bestScore=-Infinity;
-  [...new Set(p.hand)].forEach(card => {
-    const gc=(og[card]||0)+1, myVal=gc*card;
-    let beats=0,joins=og[card]?1:0,wouldBeat=false;
-    Object.entries(og).forEach(([num,cnt])=>{ if(+num===card)return; const tv=cnt*+num; if(myVal>tv)beats++; if(gc>1&&tv>myVal)wouldBeat=true; });
-    const score=beats*20+joins*6-(wouldBeat?15:0)-card*0.4;
-    if(score>bestScore){bestScore=score;best=card}
-  });
-  if(best===null)best=Math.min(...p.hand);
-  doPlay(id,best);
-}
-
-function endLocalGame() {
-  if(!G||G.phase==='gameover')return;
-  G.phase='gameover'; clearInterval(timerIv);
-  showEndOverlay();
-}
+window.humanPlay = (val) => window.onlinePlay(val);
 
 // ── TIMER ──
 function timerStart() {
@@ -904,7 +779,7 @@ function renderAll() { renderTop(); renderBot(); renderDeck(); renderLog(); }
 
 function renderTop() {
   const el = document.getElementById('g-top'); if(!el||!G)return; el.innerHTML='';
-  const meId = isOnline ? myUid : myId;
+  const meId = myUid;
   const others = G.playerOrder.filter(id => id !== meId);
   others.forEach(id => {
     const p = G.players[id]; if(!p)return;
@@ -927,11 +802,9 @@ function renderTop() {
 
 function renderBot() {
   if(!G)return;
-  const meId = isOnline ? myUid : myId;
+  const meId = myUid;
   const p = G.players[meId]; if(!p)return;
-  const playPhase = isOnline
-    ? (isMyTurn() && !myTurnBusy && p.played===null && G.phase==='playing')
-    : (isMyTurn() && !p.isAI && G.phase==='playing');
+  const playPhase = isMyTurn() && !myTurnBusy && p.played===null && G.phase==='playing';
   document.getElementById('g-bot').classList.toggle('myturn', playPhase);
   document.getElementById('bot-name').textContent = p.isWinner?`${p.name} 🏆`:p.name;
   document.getElementById('hint').style.display = playPhase?'':'none';
@@ -958,7 +831,7 @@ function renderDeck() {
   if(ind&&G.playerOrder&&G.playerOrder[G.cur]) {
     const c = G.players[G.playerOrder[G.cur]];
     const meId = isOnline?myUid:myId;
-    const isMeTurn = G.playerOrder[G.cur]===meId;
+    const isMeTurn = G.playerOrder[G.cur]===myUid;
     ind.textContent = c?.isWinner?'게임 종료':`${c?.name}의 차례${isMeTurn?' ✏️':''}`;
   }
 }
