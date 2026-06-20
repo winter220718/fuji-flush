@@ -640,10 +640,10 @@ async function doAiTurn() {
   // push-through: 이미 낸 카드가 있으면 먼저 처리
   if (ap.played !== null) {
     runBeatCheck(g, curId);
-    if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); myTurnBusy = false; return; }
+    if (g.winners.length) { g.phase = 'gameover'; myTurnBusy = false; await writeGame(g); return; }
     g.cur = nextCur(g);
-    await writeGame(g);
     myTurnBusy = false;
+    await writeGame(g);
     return;
   }
 
@@ -653,10 +653,10 @@ async function doAiTurn() {
   ap.played = val;
   addLog(g, `${ap.name}가 ${val} 냄`, 'p');
   runBeatCheck(g, curId);
-  if (g.winners.length) { g.phase = 'gameover'; await writeGame(g); myTurnBusy = false; return; }
+  if (g.winners.length) { g.phase = 'gameover'; myTurnBusy = false; await writeGame(g); return; }
   g.cur = nextCur(g);
-  await writeGame(g);
   myTurnBusy = false;
+  await writeGame(g);
 }
 
 function normalizeGame(game) {
