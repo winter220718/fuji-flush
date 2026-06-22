@@ -40,7 +40,7 @@ input{font-family:inherit}
   box-shadow:0 6px 24px rgba(0,0,0,.15);border:3px solid rgba(0,0,0,.08);
   animation:float 3s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.home-title{font-size:52px;font-weight:900;letter-spacing:-2px;color:#1f2937}
+.home-title{font-size:52px;font-weight:100;letter-spacing:-2px;color:#1f2937}
 .home-name-input{width:320px;padding:12px 16px;border-radius:12px;
   border:1.5px solid var(--border);background:var(--surface);
   font-size:16px;color:var(--txt);outline:none;text-align:center}
@@ -153,34 +153,49 @@ input{font-family:inherit}
 
 /* GAME */
 #s-game{flex-direction:column;padding:8px 8px 6px;gap:5px;overflow:hidden;
-  background:linear-gradient(150deg,var(--bg) 0%,var(--bg2) 100%)}
+  background:#ffffff}
 
 #g-top{display:flex;gap:8px;flex-shrink:0;justify-content:center;flex-wrap:wrap}
 
-#g-mid{display:flex;gap:8px;justify-content:center;align-items:stretch;
-  flex-shrink:0;height:150px}
+#g-mid{position:relative;display:flex;align-items:stretch;
+  flex-shrink:0;height:240px}
+#g-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;z-index:1;pointer-events:none}
 
-#g-bot{background:rgba(255,255,255,0.93);
-  border:2px solid rgba(0,0,0,0.08);border-radius:18px;
-  padding:8px 10px 6px;flex:1;min-height:0;display:flex;flex-direction:column;
-  align-items:center;gap:6px;width:100%;box-sizing:border-box;
+#g-bot{background:transparent;
+  border:none;border-radius:18px;
+  padding:24px 10px 6px;flex-shrink:0;display:flex;flex-direction:column;position:relative;
+  align-items:center;gap:6px;width:fit-content;min-width:300px;box-sizing:border-box;margin:0 auto;
   box-shadow:0 2px 12px rgba(0,0,0,.07);transition:border-color .25s,box-shadow .25s}
-#g-bot.myturn{border-color:#1f2937;background:#fff;
-  box-shadow:0 0 0 3px rgba(31,41,55,.22),0 4px 24px rgba(0,0,0,.1);
-  animation:myTurnPulse 1.4s ease-in-out infinite}
+#g-bot.myturn{}
 #g-bot.mywon{border-color:#d97706;
   background:#fffbeb;box-shadow:0 0 0 3px rgba(217,119,6,.3)}
-@keyframes myTurnPulse{0%,100%{box-shadow:0 0 0 3px rgba(31,41,55,.22),0 4px 24px rgba(0,0,0,.08)}50%{box-shadow:0 0 0 6px rgba(31,41,55,.1),0 4px 32px rgba(0,0,0,.1)}}
-#my-turn-banner{display:none;align-items:center;justify-content:center;gap:6px;
-  background:#1f2937;color:#fff;font-size:13px;font-weight:800;letter-spacing:.05em;
-  border-radius:20px;padding:5px 16px;animation:bannerPop .3s cubic-bezier(.34,1.56,.64,1)}
-@keyframes bannerPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-#my-turn-banner.show{display:flex}
+@keyframes myTurnHeartbeat{
+  0%  {transform:scale(1);    box-shadow:0 0 0 2px rgba(31,41,55,.15),0 4px 16px rgba(0,0,0,.07)}
+  12% {transform:scale(1.02);box-shadow:0 0 0 4px rgba(31,41,55,.28),0 6px 20px rgba(0,0,0,.11)}
+  24% {transform:scale(1);    box-shadow:0 0 0 2px rgba(31,41,55,.15),0 4px 16px rgba(0,0,0,.07)}
+  36% {transform:scale(1.015);box-shadow:0 0 0 3px rgba(31,41,55,.2),0 5px 18px rgba(0,0,0,.09)}
+  60%,100%{transform:scale(1);box-shadow:0 0 0 2px rgba(31,41,55,.12),0 4px 16px rgba(0,0,0,.06)}
+}
+#my-turn-banner{display:none;align-items:center;justify-content:center;gap:8px;
+  position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);
+  background:linear-gradient(120deg,#312e81,#4f46e5,#7c3aed,#4f46e5,#312e81);
+  background-size:300% 100%;
+  color:#fff;font-size:26px;font-weight:900;letter-spacing:.06em;
+  border-radius:12px;padding:8px 28px;
+  white-space:nowrap;z-index:10;
+  box-shadow:0 4px 24px rgba(79,70,229,.45),inset 0 1px 0 rgba(255,255,255,.15)}
+@keyframes bannerPop{from{opacity:0;transform:translateX(-50%) scale(.85)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes bannerShimmer{
+  0%{background-position:100% 0}100%{background-position:-100% 0}
+}
+#my-turn-banner.show{display:flex;
+  animation:bannerPop .25s cubic-bezier(.34,1.56,.64,1),bannerShimmer 2s linear .25s infinite}
 
 .pslot{background:rgba(255,255,255,0.90);
-  border:1.5px solid rgba(0,0,0,0.09);border-radius:12px;
-  padding:6px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;
-  width:110px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.06);
+  border:1.5px solid rgba(0,0,0,0.09);border-radius:14px;
+  padding:10px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  width:160px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.06);
   transition:border-color .25s,box-shadow .25s,background .25s}
 .pslot.turn{border-color:#1f2937;background:#e0f2fe;
   box-shadow:0 0 0 3px rgba(31,41,55,.4),0 4px 16px rgba(0,0,0,.12);
@@ -191,12 +206,12 @@ input{font-family:inherit}
 }
 .pslot.winner{border-color:#d97706;background:#fffbeb}
 .pslot.loser{border-color:#dc2626;background:#fff1f2}
-.pname{font-size:13px;font-weight:700;color:#111827;text-align:center;
+.pname{font-size:26px;font-weight:700;color:#111827;text-align:center;
   max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pcount{font-size:12px;color:#6b7280;font-weight:600}
+.pcount{font-size:22px;color:#6b7280;font-weight:600}
 .phand{display:flex;gap:1px;flex-wrap:wrap;justify-content:center;max-width:90px}
 .mini-card{width:14px;height:20px;border-radius:3px;border:1.5px solid #c8d0dc;background:#eef2f7}
-.played-zone{width:60px;height:86px;border:1.5px dashed rgba(0,0,0,.22);border-radius:10px;
+.played-zone{width:120px;height:172px;border:1.5px dashed rgba(0,0,0,.22);border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-size:12px;color:#9ca3af;
   background:#f9fafb}
 
@@ -204,26 +219,32 @@ input{font-family:inherit}
 .card{border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   position:relative;user-select:none;transition:transform .18s,box-shadow .18s;flex-shrink:0;
   background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.14);overflow:hidden;
-  width:60px;height:86px}
-.c-tl,.c-br{position:absolute;font-size:11px;font-weight:900;line-height:1;text-align:center}
-.c-tl{top:4px;left:5px}.c-br{bottom:4px;right:5px;transform:rotate(180deg)}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:12px 12px 0 0}
-.c-emoji{font-size:22px;line-height:1;margin-bottom:1px}
-.c-num{font-size:22px;font-weight:900;line-height:1}
+  width:120px;height:172px}
+.c-tl,.c-br{position:absolute;font-size:18px;font-weight:900;line-height:1;text-align:center}
+.c-tl{top:7px;left:9px}.c-br{bottom:7px;right:9px;transform:rotate(180deg)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:10px;border-radius:12px 12px 0 0}
+.c-emoji{font-size:44px;line-height:1;margin-bottom:3px}
+.c-num{font-size:42px;font-weight:900;line-height:1}
 .card.ca::before{background:var(--ca)}.card.ca .c-tl,.card.ca .c-br,.card.ca .c-num{color:var(--ca-d)}
 .card.cb::before{background:var(--cb)}.card.cb .c-tl,.card.cb .c-br,.card.cb .c-num{color:var(--cb-d)}
 .card.cc::before{background:var(--cc)}.card.cc .c-tl,.card.cc .c-br,.card.cc .c-num{color:var(--cc-d)}
 .card.cd::before{background:var(--cd)}.card.cd .c-tl,.card.cd .c-br,.card.cd .c-num{color:var(--cd-d)}
-.card.hand-card{flex-shrink:0;width:80px;height:115px;transform-origin:bottom center;
-  position:relative;z-index:1;border-radius:13px}
-.card.hand-card .c-tl,.card.hand-card .c-br{font-size:clamp(10px,2.5vw,15px)}
-.card.hand-card .c-emoji{font-size:clamp(20px,4.5vw,34px)}.card.hand-card .c-num{font-size:clamp(18px,4.5vw,32px)}
-.card.hand-card::before{height:8px}
+.card.hand-card{flex-shrink:0;width:116px;height:166px;transform-origin:bottom center;
+  position:relative;z-index:1;border-radius:16px}
+.card.hand-card .c-tl,.card.hand-card .c-br{font-size:20px}
+.card.hand-card .c-emoji{font-size:44px}.card.hand-card .c-num{font-size:40px}
+.card.hand-card::before{height:11px}
 .card.clickable{cursor:pointer}
 .card.clickable:hover{transform:translateY(-18px) scale(1.05)!important;
   box-shadow:0 16px 32px rgba(0,0,0,.25);z-index:20!important}
 
-.anim-beat{animation:slotBeat 0.9s ease forwards!important}
+.anim-flyaway{animation:cardFlyAway 0.6s ease forwards!important}
+@keyframes cardFlyAway{
+  0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}
+  60%{transform:translate(120px,-60px) rotate(25deg) scale(0.8);opacity:.6}
+  100%{transform:translate(220px,-120px) rotate(45deg) scale(0.4);opacity:0}
+}
+.anim-beat{animation:slotBeat 1.8s ease forwards!important}
 @keyframes slotBeat{
   0%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
   15%{transform:scale(1.06);background:rgba(220,38,38,0.22);box-shadow:0 0 0 3px rgba(220,38,38,.5),0 4px 18px rgba(220,38,38,.3)}
@@ -234,14 +255,14 @@ input{font-family:inherit}
   90%{transform:scale(1.01)}
   100%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
 }
-.anim-push{animation:slotPush 0.8s ease forwards!important}
+.anim-push{animation:slotPush 1.6s ease forwards!important}
 @keyframes slotPush{
   0%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
   30%{transform:scale(1.05);background:#eff6ff;box-shadow:0 0 0 3px rgba(59,130,246,.5),0 4px 18px rgba(59,130,246,.25)}
   70%{transform:scale(1.02);background:#f0f9ff}
   100%{transform:scale(1);box-shadow:0 1px 6px rgba(0,0,0,.06)}
 }
-.card.anim-beat-card{animation:cardBeat 0.9s ease forwards!important}
+.card.anim-beat-card{animation:cardBeat 1.8s ease forwards!important}
 @keyframes cardBeat{
   0%{transform:scale(1)}
   20%{transform:scale(1.15) rotate(-3deg);filter:brightness(0.8) saturate(2)}
@@ -255,30 +276,32 @@ input{font-family:inherit}
   display:flex;align-items:center;justify-content:center;font-size:22px;
   box-shadow:3px 3px 0 rgba(0,0,0,.12),5px 5px 0 rgba(0,0,0,.07);
   border:2px solid rgba(255,255,255,.2)}
-.deck-count{font-size:11px;color:var(--txt2);text-align:center;font-weight:500}
-#turn-ind{font-size:13px;color:#111827;text-align:center;padding:5px 12px;
+.deck-count{font-size:22px;color:var(--txt2);text-align:center;font-weight:500}
+#turn-ind{font-size:26px;color:#111827;text-align:center;padding:5px 12px;
   background:rgba(255,255,255,.95);border-radius:20px;border:1px solid rgba(0,0,0,.12);font-weight:700;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-#game-timer{font-size:13px;color:#374151;font-variant-numeric:tabular-nums;text-align:center;font-weight:600}
+#game-timer{font-size:26px;color:#374151;font-variant-numeric:tabular-nums;text-align:center;font-weight:600}
 
-#g-log{flex:1;min-width:0;background:rgba(255,255,255,0.92);border-radius:12px;
+#g-log{width:20%;flex-shrink:0;min-width:0;background:transparent;border-radius:12px;
   padding:7px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
-  border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 6px rgba(0,0,0,.06)}
-.log-e{font-size:11px;padding:2px 4px;border-radius:4px;line-height:1.4;word-break:keep-all}
+  border:none;box-shadow:none}
+.log-e{font-size:22px;padding:2px 4px;border-radius:4px;line-height:1.4;word-break:keep-all}
+.log-mine{text-align:right}
 .log-n{color:var(--txt3)}.log-p{color:var(--txt2)}
 .log-b{color:var(--red);font-weight:700;background:rgba(220,80,80,.1)}
 .log-s{color:#1565c0;font-weight:700;background:rgba(65,130,240,.1)}
 .log-w{color:#1f2937;font-weight:800;font-size:12px}
-.log-t{color:var(--txt3);font-size:10px;border-top:1px solid rgba(0,0,0,.08);margin-top:2px;padding-top:4px}
+.log-t{color:#4b5563;font-size:11px;font-weight:700;margin-top:2px;padding-top:4px}
 
-.bot-row{display:flex;align-items:center;gap:10px;width:100%}
-.bot-name{font-size:16px;font-weight:800;color:#1f2937}
+.bot-row{display:flex;align-items:center;gap:10px;width:100%;padding:6px 16px}
+.bot-name{font-size:32px;font-weight:800;color:#1f2937}
 #hint{font-size:14px;color:#1f2937;font-weight:700;animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.bot-played{display:flex;align-items:center;gap:10px}
+.bot-played{display:flex;align-items:center;justify-content:center;gap:10px}
+.spectator-hint{font-size:15px;color:#9ca3af;font-weight:600;padding:12px 0;text-align:center;letter-spacing:.03em}
 .bot-played-label{font-size:12px;color:var(--txt3)}
 #human-hand{display:flex;justify-content:center;align-items:flex-end;
-  padding:4px 20px 2px;min-height:110px;width:100%;position:relative;overflow:visible}
-#hcard-cnt{font-size:12px;color:var(--txt3)}
+  padding:10px;width:560px;height:190px;position:relative;overflow:visible;flex-shrink:0}
+#hcard-cnt{font-size:26px;color:var(--txt3)}
 .won-banner{background:linear-gradient(135deg,#f6d365,#fda085);
   color:#7c4f00;font-size:13px;font-weight:800;padding:5px 16px;
   border-radius:20px;letter-spacing:.03em;box-shadow:0 2px 8px rgba(253,160,133,.4)}
@@ -323,7 +346,7 @@ input{font-family:inherit}
 
 <!-- HOME -->
 <div id="s-home" class="screen active">
-  <div class="version-badge">v0.8</div>
+  <div class="version-badge">v0.9.5</div>
   <img src="icon.webp" class="home-icon" alt="후지플러쉬">
   <div class="home-title">후지 플러쉬</div>
   <div class="home-recent">
@@ -404,7 +427,7 @@ input{font-family:inherit}
 <div id="s-game" class="screen">
   <div id="g-top"></div>
   <div id="g-mid">
-    <div id="g-deck">
+    <div id="g-center">
       <div class="deck-pile" id="deck-pile">🂠</div>
       <div class="deck-count" id="deck-cnt">남은 카드: 0장</div>
       <div id="turn-ind">-</div>
@@ -415,11 +438,9 @@ input{font-family:inherit}
   <div id="g-bot">
     <div class="bot-row">
       <span class="bot-name" id="bot-name">나</span>
-      <div id="my-turn-banner">✏️ 내 차례</div>
-      <span id="hcard-cnt" style="margin-left:auto"></span>
     </div>
-    <div class="bot-played">
-      <span class="bot-played-label">낸 카드:</span>
+    <div class="bot-played" style="position:relative">
+      <div id="my-turn-banner">내 차례</div>
       <div id="h-played" class="played-zone">없음</div>
     </div>
     <div id="human-hand"></div>
@@ -478,6 +499,12 @@ let myTurnBusy = false;
 let aiProcessing = false;
 let timerIv = null;
 let amHost = false;
+let isSpectator = false;
+let prevMyPlayed = null;
+let pendingFlyaway = false;
+let flyawayPlaying = false;
+let prevHandLength = -1;
+const prevOppHandCounts = {};
 
 // ── UTILS ──
 function shuffle(a) { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]]} return b; }
@@ -569,7 +596,14 @@ window.joinRoom = async () => {
   const snap = await get(ref(db, `rooms/${code}`));
   if (!snap.exists()) { alert('방이 없습니다. 코드를 확인해주세요.'); return; }
   const room = snap.val();
-  if (room.status !== 'waiting') { alert('이미 시작된 방입니다.'); return; }
+  if (room.status === 'playing' || room.status === 'ended') {
+    if (!confirm('이미 진행 중인 게임입니다.\n관전자로 입장하시겠습니까?')) return;
+    isSpectator = true;
+    roomCode = code;
+    show('s-game'); timerStart();
+    listenRoom(code);
+    return;
+  }
   const name = myName('inp-join-name');
   await update(ref(db, `rooms/${code}/players`), { [myUid]: { name, joinedAt: Date.now() } });
   roomCode = code;
@@ -581,7 +615,7 @@ window.joinRoom = async () => {
 window.leaveRoom = () => {
   if (roomUnsub) { roomUnsub(); roomUnsub = null; }
   if (roomCode) { update(ref(db, `rooms/${roomCode}/players/${myUid}`), { left: true }).catch(()=>{}); }
-  roomCode = null; G = null; myTurnBusy = false; aiProcessing = false; amHost = false;
+  roomCode = null; G = null; myTurnBusy = false; aiProcessing = false; amHost = false; isSpectator = false;
   clearInterval(timerIv);
   overlayOn(false);
   refreshHomeRecords(); show('s-home');
@@ -615,11 +649,15 @@ function listenRoom(code) {
       if (G.lastEvent && G.lastEvent.ts !== prevEvent?.ts) {
         const ev = G.lastEvent;
         if (ev.type === 'beat') triggerAnimation(ev.ids, 'anim-beat');
-        if (ev.type === 'push') triggerAnimation(ev.ids, 'anim-push');
+        if (ev.type === 'push') {
+          triggerAnimation(ev.ids, 'anim-push');
+          // 내 카드가 push로 사라질 예정이면 flyaway 플래그
+          if (!isSpectator && G.players[myUid]?.played !== null) pendingFlyaway = true;
+        }
       }
-      if (G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
+      if (!isSpectator && G.phase === 'playing' && isMyTurn()) handleMyTurnStart();
       // lastEvent가 있으면 AI가 중간 단계 처리 중 — aiProcessing 리셋/재트리거 금지
-      if (G.phase === 'playing' && amHost && isCurrentPlayerAI() && !G.lastEvent) {
+      if (!isSpectator && G.phase === 'playing' && amHost && isCurrentPlayerAI() && !G.lastEvent) {
         aiProcessing = false; setTimeout(doAiTurn, 900);
       }
       rescheduleWatchdog();
@@ -806,7 +844,7 @@ function normalizeGame(game) {
   return game;
 }
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const sleep = ms => new Promise(r => setTimeout(r, window.__fastMode ? Math.min(ms, 50) : ms));
 
 function addLog(g, msg, type='n') {
   if (!g.log) g.log = [];
@@ -848,16 +886,27 @@ function runPush(g, id) {
   const p = g.players[id]; if (!p||p.played===null) return [];
   const X = p.played;
   const group = g.playerOrder.filter(i => !g.players[i].isWinner && g.players[i].played===X);
-  addLog(g, `🌊 ${group.map(i=>g.players[i].name).join('+')}의 ${X} 푸시!`, 's');
-  group.forEach(i => { g.discard.push(g.players[i].played); g.players[i].played = null; });
+  const myVal = group.length * X;
+  // 합산값이 같은 다른 그룹도 함께 밀어냄 (5+5=10 vs 10 같은 경우)
+  const otherVals = [...new Set(g.playerOrder
+    .filter(i => !g.players[i].isWinner && g.players[i].played!==null && g.players[i].played!==X)
+    .map(i => g.players[i].played))];
+  const mutualGroup = [];
+  for (const Y of otherVals) {
+    const yg = g.playerOrder.filter(i => !g.players[i].isWinner && g.players[i].played===Y);
+    if (yg.length * Y === myVal) mutualGroup.push(...yg);
+  }
+  const allPush = [...group, ...mutualGroup];
+  addLog(g, `🌊 ${allPush.map(i=>g.players[i].name).join('+')}의 ${myVal} 푸시!`, 's');
+  allPush.forEach(i => { if(g.players[i].played!==null){ g.discard.push(g.players[i].played); g.players[i].played=null; } });
   const newW = [];
-  group.forEach(i => {
+  allPush.forEach(i => {
     if (!g.players[i].isWinner && g.players[i].hand.length===0) {
       g.players[i].isWinner = true; g.winners.push(i); newW.push(g.players[i].name);
     }
   });
   if (newW.length) addLog(g, `🏆 ${newW.join(', ')} 승리!!`, 'w');
-  return newW; // returns winner names (non-empty = game over)
+  return newW;
 }
 
 // animate beat/push events for given player IDs
@@ -872,13 +921,15 @@ function triggerAnimation(ids, animClass) {
     void el.offsetWidth; // force reflow
     el.classList.add(animClass);
     el.addEventListener('animationend', () => el.classList.remove(animClass), {once:true});
-    // also animate played card inside the slot
-    const card = el.querySelector('.card');
-    if (card) {
-      card.classList.remove('anim-beat-card');
-      void card.offsetWidth;
-      card.classList.add('anim-beat-card');
-      card.addEventListener('animationend', ()=>card.classList.remove('anim-beat-card'), {once:true});
+    // beat일 때만 카드 자체 애니메이션 — push는 renderBot의 flyaway가 처리
+    if (animClass === 'anim-beat') {
+      const card = el.querySelector('.card');
+      if (card) {
+        card.classList.remove('anim-beat-card');
+        void card.offsetWidth;
+        card.classList.add('anim-beat-card');
+        card.addEventListener('animationend', ()=>card.classList.remove('anim-beat-card'), {once:true});
+      }
     }
   });
 }
@@ -1019,6 +1070,23 @@ function timerStart() {
 // ── RENDERING ──
 function renderAll() { renderTop(); renderBot(); renderDeck(); renderLog(); }
 
+function flyCardFromDeck(destEl) {
+  const deckEl = document.getElementById('deck-pile');
+  if (!deckEl || !destEl) return;
+  const dkR = deckEl.getBoundingClientRect();
+  const dtR = destEl.getBoundingClientRect();
+  if (!dkR.width || !dtR.width) return;
+  const ghost = document.createElement('div');
+  ghost.style.cssText = `position:fixed;left:${dkR.left+dkR.width/2-30}px;top:${dkR.top+dkR.height/2-43}px;width:60px;height:86px;background:linear-gradient(135deg,#1e3a5f,#2d5a8e);border-radius:8px;border:1.5px solid rgba(255,255,255,.3);pointer-events:none;z-index:9999;transition:transform .45s cubic-bezier(.2,.8,.4,1),opacity .45s;box-shadow:0 4px 12px rgba(0,0,0,.3)`;
+  document.body.appendChild(ghost);
+  void ghost.offsetWidth;
+  const dx = (dtR.left+dtR.width/2)-(dkR.left+dkR.width/2);
+  const dy = (dtR.top+dtR.height/2)-(dkR.top+dkR.height/2);
+  ghost.style.transform = `translate(${dx}px,${dy}px) scale(0.6)`;
+  ghost.style.opacity = '0';
+  ghost.addEventListener('transitionend', ()=>ghost.remove(), {once:true});
+}
+
 function renderTop() {
   const el = document.getElementById('g-top'); if(!el||!G)return; el.innerHTML='';
   const others = G.playerOrder.filter(id => id !== myUid);
@@ -1062,11 +1130,17 @@ function renderTop() {
     const cnt = document.createElement('div'); cnt.className='pcount';
     cnt.textContent = p.isWinner ? '승리!' : `${p.hand.length}장`;
     div.append(nm, zone, fanWrap, cnt); el.appendChild(div);
+    // 카드 수 증가 시 덱→슬롯 fly 모션
+    const prev = prevOppHandCounts[id];
+    if (prev !== undefined && p.hand.length > prev) flyCardFromDeck(div);
+    prevOppHandCounts[id] = p.hand.length;
   });
 }
 
 function renderBot() {
   if(!G)return;
+  if(isSpectator) { renderSpectatorBot(); return; }
+  if(flyawayPlaying) return; // fly-away 중엔 방해 금지
   const p = G.players[myUid]; if(!p)return;
   const playPhase = isMyTurn() && !myTurnBusy && p.played===null && G.phase==='playing';
   const iAmLoser = G.phase==='gameover' && !G.winners.includes(myUid);
@@ -1080,15 +1154,36 @@ function renderBot() {
       banner.innerHTML='🏆 승리! 대기 중...'; banner.classList.add('show'); banner.style.background='#d97706';
     } else {
       banner.classList.toggle('show', playPhase);
-      if(playPhase){ banner.innerHTML='✏️ 내 차례'; banner.style.background=''; }
+      if(playPhase){ banner.innerHTML='내 차례'; banner.style.background=''; }
     }
   }
-  document.getElementById('hcard-cnt').textContent = p.isWinner ? '완료' : `패 ${p.hand.length}장`;
   const hz = document.getElementById('h-played');
+  // 카드가 push로 사라질 때 flyaway 애니메이션
+  if (pendingFlyaway && p.played === null) {
+    pendingFlyaway = false;
+    const ghost = hz.querySelector('.card');
+    if (ghost) {
+      flyawayPlaying = true;
+      ghost.classList.add('anim-flyaway');
+      ghost.addEventListener('animationend', () => {
+        flyawayPlaying = false;
+        hz.innerHTML=''; hz.className='played-zone'; hz.style.cssText='';
+        const t=document.createElement('span'); t.style.cssText='font-size:12px;color:#aaa'; t.textContent='없음'; hz.appendChild(t);
+        renderBot(); // 손패 포함 재렌더
+      }, {once:true});
+      prevMyPlayed = p.played;
+      return;
+    }
+  }
+  prevMyPlayed = p.played;
   hz.innerHTML=''; hz.className='played-zone'; hz.style.cssText='';
   if(p.played!==null){hz.style.cssText='border:none;background:transparent;padding:0';hz.appendChild(mkCard(p.played));}
   else { const t=document.createElement('span'); t.style.cssText='font-size:12px;color:#aaa'; t.textContent='없음'; hz.appendChild(t); }
-  const hh = document.getElementById('human-hand'); hh.innerHTML='';
+  const hh = document.getElementById('human-hand');
+  // 카드 수 증가 시 덱→손패 fly 모션
+  if (prevHandLength >= 0 && p.hand.length > prevHandLength) flyCardFromDeck(hh);
+  prevHandLength = p.hand.length;
+  hh.innerHTML='';
   const sorted = [...p.hand].sort((a,b)=>a-b);
   const n = sorted.length;
   const maxAngle = Math.min(30, n * 4);
@@ -1105,6 +1200,21 @@ function renderBot() {
   });
 }
 
+function renderSpectatorBot() {
+  const bot = document.getElementById('g-bot');
+  bot.classList.remove('myturn','mywon');
+  const banner = document.getElementById('my-turn-banner');
+  if(banner) banner.classList.remove('show');
+  document.getElementById('bot-name').textContent = '👁 관전 중';
+  const hz = document.getElementById('h-played'); hz.innerHTML=''; hz.className='played-zone';
+  const t=document.createElement('span'); t.style.cssText='font-size:13px;color:#aaa'; t.textContent='-'; hz.appendChild(t);
+  const hh = document.getElementById('human-hand'); hh.innerHTML='';
+  const label = document.createElement('div');
+  label.className='spectator-hint';
+  label.textContent='게임을 관전하고 있습니다';
+  hh.appendChild(label);
+}
+
 function renderDeck() {
   if(!G)return;
   const el = document.getElementById('deck-cnt');
@@ -1116,7 +1226,7 @@ function renderDeck() {
     const c = G.players[G.playerOrder[G.cur]];
     const meId = myUid;
     const isMeTurn = G.playerOrder[G.cur]===myUid;
-    ind.textContent = c?.isWinner?'게임 종료':`${c?.name}의 차례${isMeTurn?' ✏️':''}`;
+    ind.textContent = c?.isWinner?'게임 종료':`${c?.name}의 차례`;
   }
 }
 
@@ -1124,9 +1234,12 @@ function renderLog() {
   const el = document.getElementById('g-log'); if(!el||!G||!G.log)return;
   el.innerHTML='';
   const logs = Array.isArray(G.log) ? G.log : Object.values(G.log);
+  const myName = G?.players?.[myUid]?.name;
   logs.slice(0,18).forEach(e=>{
     const d=document.createElement('div');
-    d.className=`log-e log-${e.type||'n'}`;
+    const msg = e.msg||'';
+    const isMine = myName && (msg.startsWith(myName) || msg.startsWith(`💥 ${myName}`));
+    d.className=`log-e log-${e.type||'n'}${isMine?' log-mine':''}`;
     d.textContent=e.msg||e;
     el.appendChild(d);
   });
@@ -1137,6 +1250,15 @@ refreshHomeRecords();
 
 // Enter key in code input
 document.getElementById('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')window.joinRoom(); });
+
+// 테스트용 상태 노출 (콘솔 접근)
+Object.defineProperties(window, {
+  _G:         { get: () => G },
+  _myUid:     { get: () => myUid },
+  _myTurnBusy:{ get: () => myTurnBusy },
+  _roomCode:  { get: () => roomCode },
+  _amHost:    { get: () => amHost },
+});
 </script>
 </body>
 </html>
